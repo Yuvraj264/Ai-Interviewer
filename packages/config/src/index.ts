@@ -12,6 +12,9 @@ export const envSchema = z.object({
   LIVEKIT_URL: z.string().default('ws://localhost:7880'),
   LIVEKIT_API_KEY: z.string().default('devkey'),
   LIVEKIT_API_SECRET: z.string().default('secret'),
+  OPENAI_API_KEY: z.string().default(''),
+  OPENAI_REALTIME_MODEL: z.string().default('gpt-4o-realtime-preview'),
+  OPENAI_REALTIME_VOICE: z.string().default('alloy'),
 });
 
 export type Env = z.infer<typeof envSchema>;

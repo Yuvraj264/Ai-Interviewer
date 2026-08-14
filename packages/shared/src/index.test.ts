@@ -1,30 +1,34 @@
 import { describe, it, expect } from 'vitest';
-import { PROJECT_PHASE, RealtimeTokenResponse, RealtimeConnectionState } from './index';
+import { PROJECT_PHASE, AiConversationState, TranscriptItem } from './index';
 
-describe('Shared Package Phase 3 Contracts', () => {
-  it('should export current Phase 3 project phase constant', () => {
-    expect(PROJECT_PHASE).toBe('Phase 3 — Realtime Audio Foundation');
+describe('Shared Package Phase 4 Contracts', () => {
+  it('should export current Phase 4 project phase constant', () => {
+    expect(PROJECT_PHASE).toBe('Phase 4 — First End-to-End Voice Interview');
   });
 
-  it('should validate RealtimeTokenResponse interface contract', () => {
-    const res: RealtimeTokenResponse = {
-      token: 'jwt.token.string',
-      url: 'ws://localhost:7880',
-      roomName: 'interview:sess_12345',
-      participantIdentity: 'candidate-sess_12345',
-    };
-    expect(res.roomName).toBe('interview:sess_12345');
-    expect(res.participantIdentity).toBe('candidate-sess_12345');
-  });
-
-  it('should support explicit RealtimeConnectionState values', () => {
-    const states: RealtimeConnectionState[] = [
-      'DISCONNECTED',
+  it('should support valid AiConversationState values', () => {
+    const states: AiConversationState[] = [
+      'IDLE',
       'CONNECTING',
-      'CONNECTED',
+      'LISTENING',
+      'THINKING',
+      'SPEAKING',
+      'INTERRUPTED',
       'RECONNECTING',
-      'FAILED',
+      'ERROR',
+      'ENDING',
     ];
-    expect(states.length).toBe(5);
+    expect(states.length).toBe(9);
+  });
+
+  it('should validate TranscriptItem shape', () => {
+    const item: TranscriptItem = {
+      id: 'tx_123',
+      speaker: 'ai',
+      text: 'Tell me about yourself.',
+      timestamp: new Date().toISOString(),
+    };
+    expect(item.speaker).toBe('ai');
+    expect(item.text).toContain('yourself');
   });
 });

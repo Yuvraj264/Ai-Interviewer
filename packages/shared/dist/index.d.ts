@@ -35,6 +35,13 @@ interface InterviewSession {
 }
 type RealtimeConnectionState = 'DISCONNECTED' | 'CONNECTING' | 'CONNECTED' | 'RECONNECTING' | 'FAILED';
 type MicrophoneState = 'IDLE' | 'REQUESTING' | 'ACTIVE' | 'DENIED' | 'ERROR';
+type AiConversationState = 'IDLE' | 'CONNECTING' | 'LISTENING' | 'THINKING' | 'SPEAKING' | 'INTERRUPTED' | 'RECONNECTING' | 'ERROR' | 'ENDING';
+interface TranscriptItem {
+    id: string;
+    speaker: 'ai' | 'candidate';
+    text: string;
+    timestamp: string;
+}
 interface RealtimeTokenResponse {
     token: string;
     url: string;
@@ -57,6 +64,6 @@ interface ApiResponse<T = unknown> {
     };
     timestamp: string;
 }
-declare const PROJECT_PHASE: "Phase 3 \u2014 Realtime Audio Foundation";
+declare const PROJECT_PHASE: "Phase 4 \u2014 First End-to-End Voice Interview";
 
-export { type ApiResponse, type CreateSessionDto, type InterviewSession, type InterviewStage, type InterviewType, type MicrophoneState, PROJECT_PHASE, type RealtimeConnectionState, type RealtimeTokenResponse, type SessionStatus, type SystemHealth, createSessionSchema };
+export { type AiConversationState, type ApiResponse, type CreateSessionDto, type InterviewSession, type InterviewStage, type InterviewType, type MicrophoneState, PROJECT_PHASE, type RealtimeConnectionState, type RealtimeTokenResponse, type SessionStatus, type SystemHealth, type TranscriptItem, createSessionSchema };

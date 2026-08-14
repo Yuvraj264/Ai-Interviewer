@@ -1,44 +1,48 @@
-import { InterviewType } from '@ai-interviewer/shared';
+interface InterviewerPromptContext {
+    candidateName?: string;
+    role?: string;
+    interviewType?: string;
+}
+declare function buildInterviewerInstructions(context?: InterviewerPromptContext): string;
 
-interface QuestionStep {
-    id: string;
-    question: string;
-    category: 'intro' | 'technical' | 'behavioral' | 'completion';
-    suggestedAnswers?: string[];
+interface InterviewInteractionProvider {
+    start(): Promise<void>;
+    submitCandidateResponse(response: string): Promise<void>;
+    getCurrentStep(): {
+        questionIndex: number;
+        totalQuestions: number;
+        question: string;
+        suggestedAnswers?: string[];
+    } | null;
+    onStateChange(callback: (state: MockInterviewerState) => void): void;
+    end(): Promise<void>;
 }
 interface MockInterviewerState {
     currentQuestionIndex: number;
     totalQuestions: number;
     currentQuestion: string;
-    progressPercentage: number;
     isCompleted: boolean;
-}
-type QuestionChangeCallback = (question: string, questionIndex: number, totalQuestions: number) => void;
-type StateChangeCallback = (state: MockInterviewerState) => void;
-interface InterviewInteractionProvider {
-    start(): Promise<void>;
-    submitCandidateResponse(response: string): Promise<void>;
-    end(): Promise<void>;
-    onQuestionChange(callback: QuestionChangeCallback): void;
-    onStateChange(callback: StateChangeCallback): void;
-    getState(): MockInterviewerState;
+    progressPercentage: number;
 }
 declare class MockInterviewer implements InterviewInteractionProvider {
+    private type;
     private questions;
     private currentIndex;
     private isCompleted;
-    private questionCallbacks;
-    private stateCallbacks;
-    constructor(interviewType?: InterviewType);
+    private listeners;
+    constructor(type?: 'technical' | 'behavioral' | 'mixed');
     start(): Promise<void>;
     submitCandidateResponse(_response: string): Promise<void>;
-    end(): Promise<void>;
-    onQuestionChange(callback: QuestionChangeCallback): void;
-    onStateChange(callback: StateChangeCallback): void;
-    getCurrentStep(): QuestionStep;
+    getCurrentStep(): {
+        questionIndex: number;
+        totalQuestions: number;
+        question: string;
+        suggestedAnswers: string[];
+    } | null;
     getState(): MockInterviewerState;
-    private notifyListeners;
+    onStateChange(callback: (state: MockInterviewerState) => void): void;
+    end(): Promise<void>;
+    private notifyState;
 }
-declare const INTERVIEW_ENGINE_VERSION = "0.2.0-phase2";
 
-export { INTERVIEW_ENGINE_VERSION, type InterviewInteractionProvider, MockInterviewer, type MockInterviewerState, type QuestionChangeCallback, type QuestionStep, type StateChangeCallback };
+export { type InterviewInteractionProvider, type InterviewerPromptContext, MockInterviewer, type MockInterviewerState, buildInterviewerInstructions };

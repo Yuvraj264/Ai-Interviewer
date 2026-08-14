@@ -2,5 +2,6 @@ packages:
   - 'apps/*'
   - 'packages/*'
 allowBuilds:
+  '@livekit/local-inference': true
   '@nestjs/core': true
   esbuild: true

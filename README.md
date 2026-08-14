@@ -4,43 +4,33 @@ Production-oriented AI Voice Interviewer platform designed to conduct interactiv
 
 ---
 
-## Current Status: Phase 3 — Realtime Audio Foundation
+## Current Status: Phase 4 — First End-to-End Voice Interview
 
-The repository is currently at **Phase 3 (Realtime Audio Foundation)**. WebRTC audio transport via LiveKit connects the candidate's browser microphone directly to a LiveKit Agent participant in the room `interview:{sessionId}` with backend JWT token authorization. OpenAI Realtime conversational models and STT/TTS pipelines remain deferred to Phase 4.
+The repository is currently at **Phase 4 (First End-to-End Voice Interview)**. Candidates can engage in a natural, multi-turn, two-way spoken conversation with an AI interviewer powered by OpenAI Realtime (`gpt-4o-realtime-preview`) and LiveKit WebRTC audio transport, with interruption/barge-in support, concise responses (1–3 sentences), live transcripts, and latency tracking.
 
 ---
 
-## Realtime Audio Architecture (Phase 3)
+## Voice Interview Architecture (Phase 4)
 
 ```text
-                         ┌──────────────────────┐
-                         │     Next.js Web      │
-                         │                      │
-                         │ Candidate Interview  │
-                         │       Screen         │
-                         └──────────┬───────────┘
-                                    │
-                              WebRTC Audio
-                                    │
-                                    ▼
-                         ┌──────────────────────┐
-                         │       LiveKit        │
-                         │      Room/Server     │
-                         └──────────┬───────────┘
-                                    │
-                                    ▼
-                         ┌──────────────────────┐
-                         │   Agent Worker       │
-                         │                      │
-                         │ Realtime Participant │
-                         └──────────────────────┘
-
-                         (No AI Models in Phase 3)
+Candidate Speaker ◄─────── WebRTC ───────┐
+                                          │
+Candidate Microphone ────► WebRTC ────► LiveKit Room
+                                          │
+                                          ▼
+                                   Agent Worker
+                                          │
+                                  OPENAI_API_KEY
+                                  (Server-Only)
+                                          │
+                                          ▼
+                                  OpenAI Realtime
+                               (gpt-4o-realtime-preview)
 ```
 
 ---
 
-## API Endpoints (Phase 3)
+## API Endpoints
 
 - `GET  /health`: Health monitoring & system phase check
 - `POST /interviews`: Create candidate interview session
@@ -80,10 +70,9 @@ pnpm build
 
 ---
 
-## What Has NOT Been Implemented Yet (Intentionally Excluded in Phase 3)
+## What Has NOT Been Implemented Yet (Intentionally Excluded in Phase 4)
 
-- OpenAI API & Realtime model connections
-- Speech-to-Text (STT) or Text-to-Speech (TTS)
-- Adaptive AI question generation & candidate evaluation scoring
-- Audio recording or S3 egress storage
-- Candidate database tables, migrations, & authentication
+- Adaptive interview state machine & scoring
+- Resume intelligence & Job Description intelligence
+- Recruiter dashboard & candidate ranking
+- Persistent audio recording & S3 uploads

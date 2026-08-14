@@ -13,7 +13,10 @@
   },
   "dependencies": {
     "@ai-interviewer/config": "workspace:*",
+    "@ai-interviewer/interview-engine": "workspace:*",
     "@ai-interviewer/shared": "workspace:*",
+    "@livekit/agents": "^1.6.3",
+    "@livekit/agents-plugin-openai": "^1.6.3",
     "livekit-client": "^2.1.3"
   },
   "devDependencies": {

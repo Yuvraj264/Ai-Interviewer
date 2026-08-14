@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useMemo } from 'react';
-import { InterviewSession } from '@ai-interviewer/shared';
+import { InterviewSession, TranscriptItem } from '@ai-interviewer/shared';
 import { MockInterviewer, MockInterviewerState } from '@ai-interviewer/interview-engine';
 import { useRealtimeAudio } from '@/hooks/useRealtimeAudio';
 import { SessionTimer } from './SessionTimer';
@@ -18,10 +18,12 @@ export const InterviewShell: React.FC<InterviewShellProps> = ({ session, onCompl
   const [customResponse, setCustomResponse] = useState('');
   const [showEndModal, setShowEndModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [localTranscript, setLocalTranscript] = useState<TranscriptItem[]>([]);
 
   const {
     connectionState,
     micState,
+    aiConversationState,
     agentConnected,
     errorMessage: realtimeError,
     connectRealtime,
@@ -33,8 +35,34 @@ export const InterviewShell: React.FC<InterviewShellProps> = ({ session, onCompl
   }, [connectRealtime]);
 
   useEffect(() => {
+    // Initialize transcript with initial AI greeting
+    setLocalTranscript([
+      {
+        id: `tx_init_${Date.now()}`,
+        speaker: 'ai',
+        text: `Hi ${session.candidateName}, welcome to your interview for the ${session.role} position. To get started, could you briefly introduce yourself?`,
+        timestamp: new Date().toLocaleTimeString(),
+      },
+    ]);
+  }, [session.candidateName, session.role]);
+
+  useEffect(() => {
     interviewer.onStateChange((newState) => {
       setInterviewerState(newState);
+
+      // Append AI question to transcript on state change
+      if (newState.currentQuestion && !newState.isCompleted) {
+        setLocalTranscript((prev) => [
+          ...prev,
+          {
+            id: `tx_ai_${Date.now()}`,
+            speaker: 'ai',
+            text: newState.currentQuestion,
+            timestamp: new Date().toLocaleTimeString(),
+          },
+        ]);
+      }
+
       if (newState.isCompleted) {
         disconnectRealtime();
         onComplete();
@@ -47,6 +75,18 @@ export const InterviewShell: React.FC<InterviewShellProps> = ({ session, onCompl
   const handleResponseSubmit = async (response: string) => {
     if (!response.trim() || isSubmitting) return;
     setIsSubmitting(true);
+
+    // Append candidate turn to transcript
+    setLocalTranscript((prev) => [
+      ...prev,
+      {
+        id: `tx_cand_${Date.now()}`,
+        speaker: 'candidate',
+        text: response,
+        timestamp: new Date().toLocaleTimeString(),
+      },
+    ]);
+
     await interviewer.submitCandidateResponse(response);
     setCustomResponse('');
     setIsSubmitting(false);
@@ -66,7 +106,7 @@ export const InterviewShell: React.FC<InterviewShellProps> = ({ session, onCompl
       {/* Shell Header */}
       <div className="shell-header">
         <div>
-          <div className="shell-title">{session.role} Interview</div>
+          <div className="shell-title">{session.role} Voice Interview</div>
           <span style={{ fontSize: '12px', color: '#94a3b8', textTransform: 'capitalize' }}>
             {session.type} Mode • Candidate: {session.candidateName}
           </span>
@@ -80,7 +120,7 @@ export const InterviewShell: React.FC<InterviewShellProps> = ({ session, onCompl
         </div>
       </div>
 
-      {/* Realtime Connection & Microphone Status Bar */}
+      {/* Realtime Transport & AI Voice Status Bar */}
       <div
         style={{
           display: 'flex',
@@ -114,6 +154,21 @@ export const InterviewShell: React.FC<InterviewShellProps> = ({ session, onCompl
             <span>WebRTC: {connectionState}</span>
           </div>
 
+          {/* AI Voice State Badge */}
+          <div
+            className="badge"
+            style={{
+              margin: 0,
+              padding: '4px 10px',
+              fontSize: '11px',
+              backgroundColor: 'rgba(56, 189, 248, 0.1)',
+              borderColor: 'rgba(56, 189, 248, 0.3)',
+              color: '#38bdf8',
+            }}
+          >
+            🤖 Voice AI: {aiConversationState}
+          </div>
+
           {/* Microphone Status */}
           <div style={{ color: micState === 'ACTIVE' ? '#34d399' : '#94a3b8', fontWeight: 500 }}>
             🎤 Mic: {micState}
@@ -122,7 +177,7 @@ export const InterviewShell: React.FC<InterviewShellProps> = ({ session, onCompl
 
         {/* Agent Presence Indicator */}
         <div style={{ color: agentConnected ? '#38bdf8' : '#94a3b8', fontWeight: 500 }}>
-          {agentConnected ? '🤖 Agent Connected' : '⌛ Waiting for Agent...'}
+          {agentConnected ? '🤖 Agent Participant Connected' : '⌛ Waiting for Agent...'}
         </div>
       </div>
 
@@ -139,11 +194,11 @@ export const InterviewShell: React.FC<InterviewShellProps> = ({ session, onCompl
           }}
         >
           <div style={{ color: '#fca5a5', fontWeight: 600, fontSize: '14px', marginBottom: '4px' }}>
-            Realtime Transport Warning
+            Voice Transport Warning
           </div>
           <p style={{ color: '#cbd5e1', fontSize: '13px', marginBottom: '12px' }}>{realtimeError}</p>
           <button className="btn-secondary" style={{ padding: '6px 14px', fontSize: '12px' }} onClick={connectRealtime}>
-            Retry Realtime Connection
+            Retry Voice Connection
           </button>
         </div>
       )}
@@ -161,14 +216,14 @@ export const InterviewShell: React.FC<InterviewShellProps> = ({ session, onCompl
         </div>
       </div>
 
-      {/* Interviewer Panel */}
+      {/* Interviewer Active Avatar Box */}
       <div className="interviewer-box">
         <div className="interviewer-avatar">
           <div className="avatar-icon">AI</div>
           <div>
             <div className="interviewer-name">AI Interviewer</div>
             <span style={{ fontSize: '11px', color: '#38bdf8' }}>
-              {agentConnected ? 'LiveKit Participant Active' : 'Deterministic Mock Engine'}
+              OpenAI Realtime (gpt-4o-realtime-preview) • Voice: Alloy
             </span>
           </div>
         </div>
@@ -176,9 +231,39 @@ export const InterviewShell: React.FC<InterviewShellProps> = ({ session, onCompl
         <div className="question-text">{interviewerState.currentQuestion}</div>
       </div>
 
-      {/* Candidate Response Section */}
-      <div style={{ textAlign: 'left', marginTop: '20px' }}>
-        <label style={{ display: 'block', marginBottom: '10px' }}>Simulated Candidate Response:</label>
+      {/* Realtime Speech Transcript Feed */}
+      <div style={{ textAlign: 'left', marginTop: '24px' }}>
+        <div style={{ fontWeight: 600, fontSize: '14px', color: '#f8fafc', marginBottom: '10px' }}>
+          Live Conversation Transcript:
+        </div>
+        <div
+          style={{
+            background: 'rgba(15, 23, 42, 0.8)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            borderRadius: '12px',
+            padding: '14px 16px',
+            maxHeight: '180px',
+            overflowY: 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '10px',
+            marginBottom: '20px',
+          }}
+        >
+          {localTranscript.map((item) => (
+            <div key={item.id} style={{ fontSize: '13px', lineHeight: '1.4' }}>
+              <span style={{ color: item.speaker === 'ai' ? '#38bdf8' : '#34d399', fontWeight: 600 }}>
+                {item.speaker === 'ai' ? 'AI Interviewer' : session.candidateName}:
+              </span>{' '}
+              <span style={{ color: '#cbd5e1' }}>{item.text}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Candidate Spoken & Text Response Actions */}
+      <div style={{ textAlign: 'left', marginTop: '10px' }}>
+        <label style={{ display: 'block', marginBottom: '10px' }}>Simulated Candidate Spoken Response:</label>
 
         {/* Quick Suggested Answers */}
         {currentStep?.suggestedAnswers && currentStep.suggestedAnswers.length > 0 && (
@@ -201,7 +286,7 @@ export const InterviewShell: React.FC<InterviewShellProps> = ({ session, onCompl
         <div style={{ display: 'flex', gap: '10px' }}>
           <input
             type="text"
-            placeholder="Type your custom response..."
+            placeholder="Type your response or speak into your microphone..."
             value={customResponse}
             onChange={(e) => setCustomResponse(e.target.value)}
             onKeyDown={(e) => {

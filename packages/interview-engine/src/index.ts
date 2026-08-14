@@ -1,206 +1,106 @@
-import { InterviewType } from '@ai-interviewer/shared';
+export * from './prompts/interviewer';
 
-export interface QuestionStep {
-  id: string;
-  question: string;
-  category: 'intro' | 'technical' | 'behavioral' | 'completion';
-  suggestedAnswers?: string[];
+export interface InterviewInteractionProvider {
+  start(): Promise<void>;
+  submitCandidateResponse(response: string): Promise<void>;
+  getCurrentStep(): { questionIndex: number; totalQuestions: number; question: string; suggestedAnswers?: string[] } | null;
+  onStateChange(callback: (state: MockInterviewerState) => void): void;
+  end(): Promise<void>;
 }
 
 export interface MockInterviewerState {
   currentQuestionIndex: number;
   totalQuestions: number;
   currentQuestion: string;
-  progressPercentage: number;
   isCompleted: boolean;
+  progressPercentage: number;
 }
 
-export type QuestionChangeCallback = (
-  question: string,
-  questionIndex: number,
-  totalQuestions: number,
-) => void;
-
-export type StateChangeCallback = (state: MockInterviewerState) => void;
-
-export interface InterviewInteractionProvider {
-  start(): Promise<void>;
-  submitCandidateResponse(response: string): Promise<void>;
-  end(): Promise<void>;
-  onQuestionChange(callback: QuestionChangeCallback): void;
-  onStateChange(callback: StateChangeCallback): void;
-  getState(): MockInterviewerState;
-}
-
-const DEFAULT_QUESTIONS: Record<InterviewType, QuestionStep[]> = {
+const DETERMINISTIC_QUESTIONS = {
   technical: [
-    {
-      id: 'tech_1',
-      question: 'Welcome! To start off, please describe your experience with modern TypeScript and distributed architectures.',
-      category: 'intro',
-      suggestedAnswers: [
-        'I have 4+ years of experience building TypeScript microservices with Node.js and REST/gRPC APIs.',
-        'I specialize in frontend React and Next.js applications with state management.',
-      ],
-    },
-    {
-      id: 'tech_2',
-      question: 'Walk me through a challenging technical problem you recently solved. What trade-offs did you evaluate?',
-      category: 'technical',
-      suggestedAnswers: [
-        'We faced high latency in DB queries, so I introduced Redis caching and query indexing.',
-        'We decoupled our monodb into microservices, improving deployment speed and fault tolerance.',
-      ],
-    },
-    {
-      id: 'tech_3',
-      question: 'How do you ensure system scalability, performance, and fault tolerance when building production APIs?',
-      category: 'technical',
-      suggestedAnswers: [
-        'Using horizontal auto-scaling, asynchronous queues, rate limiting, and structured logging.',
-        'Enforcing strict API contracts, circuit breakers, and comprehensive automated test suites.',
-      ],
-    },
-    {
-      id: 'tech_4',
-      question: 'Thank you! That completes our technical assessment. Do you have any final remarks on your implementation strategy?',
-      category: 'completion',
-      suggestedAnswers: ['I focus on clean, testable, and maintainable architecture.'],
-    },
+    'Welcome! Could you give a 1-minute overview of your technical background and core skills?',
+    'What was the most challenging technical project you built recently, and how did you approach its design?',
+    'How do you manage system reliability, performance optimization, and error handling in high-throughput applications?',
   ],
   behavioral: [
-    {
-      id: 'beh_1',
-      question: 'Welcome! Tell me about a time you had to navigate ambiguity or conflicting priorities on a critical project.',
-      category: 'intro',
-      suggestedAnswers: [
-        'I aligned stakeholders by presenting a phased roadmap and prioritizing high-impact MVP features.',
-      ],
-    },
-    {
-      id: 'beh_2',
-      question: 'Describe a situation where a project or release failed to meet expectations. What did you learn?',
-      category: 'behavioral',
-      suggestedAnswers: [
-        'We missed a edge-case scenario; I introduced automated integration testing to prevent recurrence.',
-      ],
-    },
-    {
-      id: 'beh_3',
-      question: 'How do you collaborate with non-technical team members, product managers, and designers?',
-      category: 'behavioral',
-      suggestedAnswers: [
-        'By translating technical constraints into business impact and maintaining open feedback channels.',
-      ],
-    },
-    {
-      id: 'beh_4',
-      question: 'Thank you! That concludes our behavioral questions. We appreciate your insights.',
-      category: 'completion',
-      suggestedAnswers: ['Thank you for the thoughtful discussion!'],
-    },
+    'Welcome! Could you introduce yourself and describe your professional journey?',
+    'Tell me about a time when you disagreed with a team decision or technical direction. How did you resolve it?',
+    'How do you prioritize competing deadlines and manage high-stress engineering deliveries?',
   ],
   mixed: [
-    {
-      id: 'mix_1',
-      question: 'Welcome! Please introduce yourself and highlight your core technical and leadership strengths.',
-      category: 'intro',
-      suggestedAnswers: [
-        'I am a Senior Software Engineer passionate about backend architecture and engineering mentorship.',
-      ],
-    },
-    {
-      id: 'mix_2',
-      question: 'Technical Question: Explain how you design RESTful APIs for consistency, versioning, and client safety.',
-      category: 'technical',
-      suggestedAnswers: [
-        'I use clear URL resources, standard HTTP verbs, semantic status codes, and URI versioning.',
-      ],
-    },
-    {
-      id: 'mix_3',
-      question: 'Behavioral Question: How do you handle code reviews when you disagree with a peer architectural choice?',
-      category: 'behavioral',
-      suggestedAnswers: [
-        'I focus on objective trade-offs, performance metrics, and team coding guidelines.',
-      ],
-    },
-    {
-      id: 'mix_4',
-      question: 'Thank you! That concludes our mixed interview session. Your responses have been recorded.',
-      category: 'completion',
-      suggestedAnswers: ['Thank you!'],
-    },
+    'Welcome! Could you introduce yourself and highlight your engineering strengths?',
+    'What key architectural tradeoffs did you evaluate in a recent major software decision?',
+    'Tell me about a time you mentored a team member or handled team conflict under tight deadlines.',
   ],
 };
 
 export class MockInterviewer implements InterviewInteractionProvider {
-  private questions: QuestionStep[];
+  private type: 'technical' | 'behavioral' | 'mixed';
+  private questions: string[];
   private currentIndex = 0;
   private isCompleted = false;
-  private questionCallbacks: QuestionChangeCallback[] = [];
-  private stateCallbacks: StateChangeCallback[] = [];
+  private listeners: Array<(state: MockInterviewerState) => void> = [];
 
-  constructor(interviewType: InterviewType = 'technical') {
-    this.questions = DEFAULT_QUESTIONS[interviewType] || DEFAULT_QUESTIONS.technical;
+  constructor(type: 'technical' | 'behavioral' | 'mixed' = 'technical') {
+    this.type = type;
+    this.questions = DETERMINISTIC_QUESTIONS[type] || DETERMINISTIC_QUESTIONS.technical;
   }
 
   public async start(): Promise<void> {
     this.currentIndex = 0;
     this.isCompleted = false;
-    this.notifyListeners();
+    this.notifyState();
   }
 
   public async submitCandidateResponse(_response: string): Promise<void> {
     if (this.isCompleted) return;
 
     if (this.currentIndex < this.questions.length - 1) {
-      this.currentIndex++;
-      this.notifyListeners();
+      this.currentIndex += 1;
     } else {
       this.isCompleted = true;
-      this.notifyListeners();
     }
+    this.notifyState();
+  }
+
+  public getCurrentStep() {
+    if (this.isCompleted) return null;
+    return {
+      questionIndex: this.currentIndex,
+      totalQuestions: this.questions.length,
+      question: this.questions[this.currentIndex],
+      suggestedAnswers: [
+        `Here is a summary of my background in ${this.type} engineering...`,
+        `In my recent project, I focused on robust architecture and scalable design...`,
+      ],
+    };
+  }
+
+  public getState(): MockInterviewerState {
+    return {
+      currentQuestionIndex: this.currentIndex,
+      totalQuestions: this.questions.length,
+      currentQuestion: this.isCompleted
+        ? 'Interview Completed. Thank you!'
+        : this.questions[this.currentIndex],
+      isCompleted: this.isCompleted,
+      progressPercentage: this.isCompleted
+        ? 100
+        : Math.round((this.currentIndex / this.questions.length) * 100),
+    };
+  }
+
+  public onStateChange(callback: (state: MockInterviewerState) => void): void {
+    this.listeners.push(callback);
   }
 
   public async end(): Promise<void> {
     this.isCompleted = true;
-    this.notifyListeners();
+    this.notifyState();
   }
 
-  public onQuestionChange(callback: QuestionChangeCallback): void {
-    this.questionCallbacks.push(callback);
-  }
-
-  public onStateChange(callback: StateChangeCallback): void {
-    this.stateCallbacks.push(callback);
-  }
-
-  public getCurrentStep(): QuestionStep {
-    return this.questions[this.currentIndex];
-  }
-
-  public getState(): MockInterviewerState {
-    const total = this.questions.length;
-    const currentStepNum = Math.min(this.currentIndex + 1, total);
-    const progressPercentage = Math.round((currentStepNum / total) * 100);
-
-    return {
-      currentQuestionIndex: this.currentIndex,
-      totalQuestions: total,
-      currentQuestion: this.questions[this.currentIndex]?.question || '',
-      progressPercentage: this.isCompleted ? 100 : progressPercentage,
-      isCompleted: this.isCompleted,
-    };
-  }
-
-  private notifyListeners(): void {
+  private notifyState(): void {
     const state = this.getState();
-    this.questionCallbacks.forEach((cb) =>
-      cb(state.currentQuestion, state.currentQuestionIndex, state.totalQuestions),
-    );
-    this.stateCallbacks.forEach((cb) => cb(state));
+    this.listeners.forEach((fn) => fn(state));
   }
 }
-
-export const INTERVIEW_ENGINE_VERSION = '0.2.0-phase2';

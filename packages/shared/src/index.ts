@@ -26,6 +26,24 @@ export type RealtimeConnectionState =
 
 export type MicrophoneState = 'IDLE' | 'REQUESTING' | 'ACTIVE' | 'DENIED' | 'ERROR';
 
+export type AiConversationState =
+  | 'IDLE'
+  | 'CONNECTING'
+  | 'LISTENING'
+  | 'THINKING'
+  | 'SPEAKING'
+  | 'INTERRUPTED'
+  | 'RECONNECTING'
+  | 'ERROR'
+  | 'ENDING';
+
+export interface TranscriptItem {
+  id: string;
+  speaker: 'ai' | 'candidate';
+  text: string;
+  timestamp: string;
+}
+
 export interface RealtimeTokenResponse {
   token: string;
   url: string;
@@ -51,4 +69,4 @@ export interface ApiResponse<T = unknown> {
   timestamp: string;
 }
 
-export const PROJECT_PHASE = 'Phase 3 — Realtime Audio Foundation' as const;
+export const PROJECT_PHASE = 'Phase 4 — First End-to-End Voice Interview' as const;

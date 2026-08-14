@@ -9,6 +9,9 @@ declare const envSchema: z.ZodObject<{
     LIVEKIT_URL: z.ZodDefault<z.ZodString>;
     LIVEKIT_API_KEY: z.ZodDefault<z.ZodString>;
     LIVEKIT_API_SECRET: z.ZodDefault<z.ZodString>;
+    OPENAI_API_KEY: z.ZodDefault<z.ZodString>;
+    OPENAI_REALTIME_MODEL: z.ZodDefault<z.ZodString>;
+    OPENAI_REALTIME_VOICE: z.ZodDefault<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
     NODE_ENV: "development" | "test" | "production";
     PORT: number;
@@ -18,6 +21,9 @@ declare const envSchema: z.ZodObject<{
     LIVEKIT_URL: string;
     LIVEKIT_API_KEY: string;
     LIVEKIT_API_SECRET: string;
+    OPENAI_API_KEY: string;
+    OPENAI_REALTIME_MODEL: string;
+    OPENAI_REALTIME_VOICE: string;
 }, {
     NODE_ENV?: "development" | "test" | "production" | undefined;
     PORT?: number | undefined;
@@ -27,6 +33,9 @@ declare const envSchema: z.ZodObject<{
     LIVEKIT_URL?: string | undefined;
     LIVEKIT_API_KEY?: string | undefined;
     LIVEKIT_API_SECRET?: string | undefined;
+    OPENAI_API_KEY?: string | undefined;
+    OPENAI_REALTIME_MODEL?: string | undefined;
+    OPENAI_REALTIME_VOICE?: string | undefined;
 }>;
 type Env = z.infer<typeof envSchema>;
 declare function getValidatedEnv(env?: NodeJS.ProcessEnv): Env;

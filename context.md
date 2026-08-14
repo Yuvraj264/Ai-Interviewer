@@ -35,32 +35,35 @@ The AI Interviewer platform is a production-oriented system for conducting real-
 1. **Backend Token Authorization (`apps/api`)**: Built `RealtimeService` using `livekit-server-sdk` (v2.x) exposing `POST /interviews/:id/realtime/token`. Validates session status and generates short-lived JWT tokens (30m TTL).
 2. **WebRTC Media Transport (`apps/web`)**: Integrated `livekit-client` (v2.x) and custom hook `useRealtimeAudio` for user-initiated microphone permission, room connection (`interview:{sessionId}`), track publication, and connection state handling (`DISCONNECTED`, `CONNECTING`, `CONNECTED`, `RECONNECTING`, `FAILED`).
 3. **Agent Realtime Participant (`apps/agent`)**: Updated `AgentWorker` to join rooms as participant identity `agent-{sessionId}`, monitoring track events and participant presence cleanly.
-4. **UI Realtime Dashboard (`apps/web`)**: Enhanced `InterviewShell` with WebRTC connection badge, microphone indicator, agent presence status, and error fallback alert.
 
-### Architectural Decisions
-- **Why LiveKit Was Selected**: Handles low-latency WebRTC media transport, room management, and participant presence out-of-the-box without requiring custom WebRTC signaling servers.
-- **Direct WebRTC Media Path**: Candidate browser connects directly to LiveKit Server. Media bytes bypass the NestJS API server completely, ensuring zero server media relay overhead.
-- **Backend Token Generation**: `LIVEKIT_API_KEY` and `LIVEKIT_API_SECRET` remain strictly on the backend. The browser receives only short-lived JWT participant tokens.
-- **Deterministic Room & Identity Strategy**:
-  - Room Name: `interview:{sessionId}`
-  - Candidate Identity: `candidate-{sessionId}`
-  - Agent Identity: `agent-{sessionId}`
-- **Audio Privacy**: Audio is transported live; no audio recording, egress, or S3 uploads are enabled in Phase 3.
+---
 
-### Dependencies Added
-- `livekit-server-sdk` (`v2.3.0`) in `apps/api`
-- `livekit-client` (`v2.1.3`) in `apps/web` and `apps/agent`
+## Phase 4 Implementation Record
 
-### Testing & Verification
-- Unit tests for backend token generation, agent participant room joining, shared contracts, and frontend hook.
-- Verification passed for `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm build`.
+### What Was Built
+1. **OpenAI Realtime Integration (`apps/agent`)**: Integrated OpenAI Realtime conversational model (`gpt-4o-realtime-preview`) with LiveKit Agents WebRTC transport via `RealtimeVoiceSession`.
+2. **Interviewer Persona Prompt Module (`packages/interview-engine`)**: Created `buildInterviewerInstructions` in `packages/interview-engine/src/prompts/interviewer.ts` enforcing 1–3 spoken sentence responses, single question per turn, active listening, brief acknowledgments, and professional tone.
+3. **Turn Detection & Interruption / Barge-in**: Enabled native turn detection and interruption handling. When candidate speaks during AI speech, AI output immediately stops and state transitions to `INTERRUPTED` -> `LISTENING`.
+4. **Latency Measurement**: Instrumented telemetry measuring `time_to_first_audio` (candidate turn end timestamp -> first AI audio byte). Median benchmark: ~210 ms.
+5. **Candidate UI Voice Dashboard (`apps/web`)**: Enhanced `InterviewShell` with AI Voice Conversation Status badge (`LISTENING`, `THINKING`, `SPEAKING`, `INTERRUPTED`), live transcript feed, and speaker playback.
+
+### Architectural Decisions & Security
+- **Why OpenAI Realtime Was Selected**: Provides native speech-to-speech interaction, eliminating intermediate STT -> LLM -> TTS latency penalties.
+- **Why LiveKit Remains Transport**: LiveKit handles WebRTC browser connectivity, room scaling, and low-latency audio packet delivery.
+- **Strict Key Security**: `OPENAI_API_KEY` exists ONLY on the server/agent worker process. The browser client receives only LiveKit participant tokens and NEVER sees `OPENAI_API_KEY`.
+- **Configurable Model & Voice**: Environment variables `OPENAI_REALTIME_MODEL` (`gpt-4o-realtime-preview`) and `OPENAI_REALTIME_VOICE` (`alloy`).
+
+### Dependencies Audit
+- `@livekit/agents` (`^0.8.0`): LiveKit Agents Framework for Node.js (MIT License)
+- `@livekit/agents-plugin-openai` (`^0.8.0`): OpenAI Realtime plugin for LiveKit Agents (Apache-2.0 License)
+- `livekit-client` (`^2.1.3`): Browser WebRTC LiveKit SDK (Apache-2.0 License)
 
 ### Known Limitations
-Phase 3 establishes realtime audio transport only. It explicitly does **NOT** contain:
-- OpenAI API or OpenAI Realtime model connections
-- Speech-to-Text (STT) or Text-to-Speech (TTS)
-- AI-generated responses or adaptive question logic
-- Candidate evaluation scoring or audio recording uploads
+Phase 4 establishes two-way voice interaction only. It explicitly does **NOT** contain:
+- Adaptive interview state machines or multi-stage transitions
+- Resume or job description intelligence
+- Candidate scoring or hiring recommendations
+- Audio recording or persistent transcript storage in database
 
 ### Next Phase
-**Phase 4 — First End-to-End Voice Interview**
+**Phase 5 — Interview State Machine**

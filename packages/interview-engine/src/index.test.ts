@@ -8,12 +8,12 @@ describe('MockInterviewer Engine Foundation', () => {
     interviewer = new MockInterviewer('technical');
   });
 
-  it('should initialize at question 0 with 25% progress', async () => {
+  it('should initialize at question 0 with 0% progress', async () => {
     await interviewer.start();
     const state = interviewer.getState();
     expect(state.currentQuestionIndex).toBe(0);
-    expect(state.totalQuestions).toBe(4);
-    expect(state.progressPercentage).toBe(25);
+    expect(state.totalQuestions).toBe(3);
+    expect(state.progressPercentage).toBe(0);
     expect(state.isCompleted).toBe(false);
     expect(state.currentQuestion).toContain('Welcome!');
   });
@@ -23,22 +23,22 @@ describe('MockInterviewer Engine Foundation', () => {
     await interviewer.submitCandidateResponse('Here is my answer to question 1.');
     const state = interviewer.getState();
     expect(state.currentQuestionIndex).toBe(1);
-    expect(state.progressPercentage).toBe(50);
-    expect(state.currentQuestion).toContain('challenging technical problem');
+    expect(state.progressPercentage).toBe(33);
+    expect(state.currentQuestion).toContain('challenging technical project');
   });
 
-  it('should invoke callbacks when question changes', async () => {
+  it('should invoke state change callbacks on updates', async () => {
     let capturedQuestion = '';
-    interviewer.onQuestionChange((q) => {
-      capturedQuestion = q;
+    interviewer.onStateChange((st) => {
+      capturedQuestion = st.currentQuestion;
     });
     await interviewer.start();
     expect(capturedQuestion).toContain('Welcome!');
     await interviewer.submitCandidateResponse('Answer 1');
-    expect(capturedQuestion).toContain('challenging technical problem');
+    expect(capturedQuestion).toContain('challenging technical project');
   });
 
-  it('should transition to completed state when reaching last question or calling end()', async () => {
+  it('should transition to completed state when calling end()', async () => {
     await interviewer.start();
     await interviewer.end();
     const state = interviewer.getState();

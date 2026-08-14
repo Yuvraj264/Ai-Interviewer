@@ -45,7 +45,10 @@ var envSchema = import_zod.z.object({
   VALKEY_URL: import_zod.z.string().default("redis://localhost:6379"),
   LIVEKIT_URL: import_zod.z.string().default("ws://localhost:7880"),
   LIVEKIT_API_KEY: import_zod.z.string().default("devkey"),
-  LIVEKIT_API_SECRET: import_zod.z.string().default("secret")
+  LIVEKIT_API_SECRET: import_zod.z.string().default("secret"),
+  OPENAI_API_KEY: import_zod.z.string().default(""),
+  OPENAI_REALTIME_MODEL: import_zod.z.string().default("gpt-4o-realtime-preview"),
+  OPENAI_REALTIME_VOICE: import_zod.z.string().default("alloy")
 });
 function getValidatedEnv(env = process.env) {
   const result = envSchema.safeParse(env);

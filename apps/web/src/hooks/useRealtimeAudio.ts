@@ -1,14 +1,16 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { Room, RoomEvent, createLocalAudioTrack, LocalAudioTrack } from 'livekit-client';
-import { RealtimeConnectionState, MicrophoneState } from '@ai-interviewer/shared';
+import { Room, RoomEvent, createLocalAudioTrack, LocalAudioTrack, RemoteTrack, RemoteTrackPublication } from 'livekit-client';
+import { RealtimeConnectionState, MicrophoneState, AiConversationState, TranscriptItem } from '@ai-interviewer/shared';
 import { InterviewApiClient } from '@/lib/api-client';
 
 export interface UseRealtimeAudioResult {
   connectionState: RealtimeConnectionState;
   micState: MicrophoneState;
+  aiConversationState: AiConversationState;
   agentConnected: boolean;
+  transcript: TranscriptItem[];
   errorMessage: string | null;
   connectRealtime: () => Promise<void>;
   disconnectRealtime: () => Promise<void>;
@@ -17,11 +19,14 @@ export interface UseRealtimeAudioResult {
 export function useRealtimeAudio(sessionId: string): UseRealtimeAudioResult {
   const [connectionState, setConnectionState] = useState<RealtimeConnectionState>('DISCONNECTED');
   const [micState, setMicState] = useState<MicrophoneState>('IDLE');
+  const [aiConversationState, setAiConversationState] = useState<AiConversationState>('IDLE');
   const [agentConnected, setAgentConnected] = useState<boolean>(false);
+  const [transcript] = useState<TranscriptItem[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const roomRef = useRef<Room | null>(null);
   const audioTrackRef = useRef<LocalAudioTrack | null>(null);
+  const audioElRef = useRef<HTMLAudioElement | null>(null);
 
   const disconnectRealtime = useCallback(async () => {
     try {
@@ -33,11 +38,15 @@ export function useRealtimeAudio(sessionId: string): UseRealtimeAudioResult {
         roomRef.current.disconnect();
         roomRef.current = null;
       }
+      if (audioElRef.current) {
+        audioElRef.current.srcObject = null;
+      }
     } catch (err) {
       console.warn('[useRealtimeAudio] Error during disconnect:', err);
     } finally {
       setConnectionState('DISCONNECTED');
       setMicState('IDLE');
+      setAiConversationState('IDLE');
       setAgentConnected(false);
     }
   }, []);
@@ -47,9 +56,10 @@ export function useRealtimeAudio(sessionId: string): UseRealtimeAudioResult {
     setErrorMessage(null);
     setConnectionState('CONNECTING');
     setMicState('REQUESTING');
+    setAiConversationState('CONNECTING');
 
     try {
-      // 1. Fetch short-lived JWT token from backend
+      // 1. Fetch short-lived JWT token from backend API
       const { token, url } = await InterviewApiClient.getRealtimeToken(sessionId);
 
       // 2. Request user microphone permission
@@ -62,12 +72,15 @@ export function useRealtimeAudio(sessionId: string): UseRealtimeAudioResult {
         const errorObj = err as Error;
         if (errorObj.name === 'NotAllowedError' || errorObj.name === 'PermissionDeniedError') {
           setMicState('DENIED');
+          setAiConversationState('ERROR');
           throw new Error('Microphone permission was denied. Please allow microphone access to participate in voice interviews.');
         } else if (errorObj.name === 'NotFoundError' || errorObj.name === 'DevicesNotFoundError') {
           setMicState('ERROR');
+          setAiConversationState('ERROR');
           throw new Error('No microphone device was detected on your computer.');
         } else {
           setMicState('ERROR');
+          setAiConversationState('ERROR');
           throw new Error(errorObj.message || 'Failed to initialize microphone audio.');
         }
       }
@@ -82,54 +95,70 @@ export function useRealtimeAudio(sessionId: string): UseRealtimeAudioResult {
 
       room.on(RoomEvent.Connected, () => {
         setConnectionState('CONNECTED');
-        console.log('[Realtime Transport] [realtime.connection.connected]');
-        
-        // Check if agent is already present in room
+        setAiConversationState('LISTENING');
+        console.log('[Realtime Voice Transport] [realtime.connection.connected]');
+
         const hasAgent = Array.from(room.remoteParticipants.values()).some((p) =>
           p.identity.startsWith('agent-'),
         );
         setAgentConnected(hasAgent);
       });
 
+      room.on(RoomEvent.TrackSubscribed, (track: RemoteTrack, publication: RemoteTrackPublication) => {
+        if (track.kind === 'audio') {
+          console.log(`[Realtime Voice Transport] Subscribed to remote audio track: ${publication.trackSid}`);
+          if (!audioElRef.current) {
+            audioElRef.current = new Audio();
+            audioElRef.current.autoplay = true;
+          }
+          track.attach(audioElRef.current);
+          setAiConversationState('SPEAKING');
+        }
+      });
+
       room.on(RoomEvent.Reconnecting, () => {
         setConnectionState('RECONNECTING');
-        console.log('[Realtime Transport] [realtime.connection.reconnecting]');
+        setAiConversationState('RECONNECTING');
+        console.log('[Realtime Voice Transport] [realtime.connection.reconnecting]');
       });
 
       room.on(RoomEvent.Reconnected, () => {
         setConnectionState('CONNECTED');
-        console.log('[Realtime Transport] [realtime.connection.reconnected]');
+        setAiConversationState('LISTENING');
+        console.log('[Realtime Voice Transport] [realtime.connection.reconnected]');
       });
 
       room.on(RoomEvent.Disconnected, () => {
         setConnectionState('DISCONNECTED');
-        console.log('[Realtime Transport] [realtime.connection.closed]');
+        setAiConversationState('IDLE');
+        console.log('[Realtime Voice Transport] [realtime.connection.closed]');
       });
 
       room.on(RoomEvent.ParticipantConnected, (participant) => {
-        console.log(`[Realtime Transport] Participant joined: ${participant.identity}`);
+        console.log(`[Realtime Voice Transport] Participant joined: ${participant.identity}`);
         if (participant.identity.startsWith('agent-')) {
           setAgentConnected(true);
         }
       });
 
       room.on(RoomEvent.ParticipantDisconnected, (participant) => {
-        console.log(`[Realtime Transport] Participant left: ${participant.identity}`);
+        console.log(`[Realtime Voice Transport] Participant left: ${participant.identity}`);
         if (participant.identity.startsWith('agent-')) {
           setAgentConnected(false);
         }
       });
 
-      // Connect to LiveKit WebSocket / WebRTC server
+      // Connect to LiveKit WebRTC server
       await room.connect(url, token);
 
-      // 4. Publish local audio track
+      // 4. Publish local microphone track
       await room.localParticipant.publishTrack(localTrack);
-      console.log('[Realtime Transport] [realtime.microphone.enabled]');
+      console.log('[Realtime Voice Transport] [realtime.microphone.enabled]');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to establish realtime connection.';
       setErrorMessage(msg);
       setConnectionState('FAILED');
+      setAiConversationState('ERROR');
       await disconnectRealtime();
     }
   }, [sessionId, disconnectRealtime]);
@@ -143,7 +172,9 @@ export function useRealtimeAudio(sessionId: string): UseRealtimeAudioResult {
   return {
     connectionState,
     micState,
+    aiConversationState,
     agentConnected,
+    transcript,
     errorMessage,
     connectRealtime,
     disconnectRealtime,
