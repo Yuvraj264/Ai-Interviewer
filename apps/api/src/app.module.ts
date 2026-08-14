@@ -5,10 +5,11 @@ import { InterviewsService } from './interviews/interviews.service';
 import { RealtimeService } from './interviews/realtime.service';
 import { DashboardController } from './dashboard/dashboard.controller';
 import { DashboardService } from './dashboard/dashboard.service';
+import { DemoController } from './demo/demo.controller';
 
 @Module({
   imports: [],
-  controllers: [HealthController, InterviewsController, DashboardController],
+  controllers: [HealthController, InterviewsController, DashboardController, DemoController],
   providers: [InterviewsService, RealtimeService, DashboardService],
 })
 export class AppModule {}

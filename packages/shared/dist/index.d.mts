@@ -322,6 +322,14 @@ interface LoadTestResult {
     errorRatePercentage: number;
     bottleneck: string;
 }
+declare const DEMO_SYNTHETIC_CANDIDATE: CandidateProfile;
+declare const DEMO_SYNTHETIC_JOB: JobProfile;
+interface DemoResetResponse {
+    success: boolean;
+    sessionId: string;
+    message: string;
+    timestamp: string;
+}
 interface TranscriptItem {
     id: string;
     speaker: 'ai' | 'candidate';
@@ -350,6 +358,6 @@ interface ApiResponse<T = unknown> {
     };
     timestamp: string;
 }
-declare const PROJECT_PHASE: "Phase 10 \u2014 Production Hardening, Load Testing & Deployment";
+declare const PROJECT_PHASE: "Phase 11 \u2014 Founder Demo, Product Excellence & AI Interview Quality";
 
-export { type AdaptiveAction, type AdaptiveDecision, type AdaptiveDecisionRecord, type AiConversationState, type AnalyticsData, type AnswerAnalysis, type ApiResponse, type CandidateExperience, type CandidateJobProfile, type CandidateProfile, type CandidateProject, type CandidateSkill, type CreateSessionDto, type DashboardOverviewMetrics, type DeepHealthStatus, type DocumentProcessingStatus, type EngineEventType, type EngineQuestion, type EngineQuestionState, type EvaluationDimension, type EvaluationEvidence, type EvaluationStatus, type EvidenceItem, type EvidenceType, type HumanReview, type HumanReviewOverride, type InterviewConfig, type InterviewEngineState, type InterviewEvaluation, type InterviewSession, type InterviewStage, type InterviewTarget, type InterviewType, type JobProfile, type LoadTestResult, type MicrophoneState, PROJECT_PHASE, type PaginatedResponse, type QualityCategory, type RealtimeConnectionState, type RealtimeTokenResponse, type RecruiterTenantContext, type RequirementCoverageStatus, type RequirementEvaluation, type SessionStatus, type SkillRequirement, type SystemHealth, type TargetStatus, type TargetType, type TranscriptItem, type VerificationStatus, createSessionSchema };
+export { type AdaptiveAction, type AdaptiveDecision, type AdaptiveDecisionRecord, type AiConversationState, type AnalyticsData, type AnswerAnalysis, type ApiResponse, type CandidateExperience, type CandidateJobProfile, type CandidateProfile, type CandidateProject, type CandidateSkill, type CreateSessionDto, DEMO_SYNTHETIC_CANDIDATE, DEMO_SYNTHETIC_JOB, type DashboardOverviewMetrics, type DeepHealthStatus, type DemoResetResponse, type DocumentProcessingStatus, type EngineEventType, type EngineQuestion, type EngineQuestionState, type EvaluationDimension, type EvaluationEvidence, type EvaluationStatus, type EvidenceItem, type EvidenceType, type HumanReview, type HumanReviewOverride, type InterviewConfig, type InterviewEngineState, type InterviewEvaluation, type InterviewSession, type InterviewStage, type InterviewTarget, type InterviewType, type JobProfile, type LoadTestResult, type MicrophoneState, PROJECT_PHASE, type PaginatedResponse, type QualityCategory, type RealtimeConnectionState, type RealtimeTokenResponse, type RecruiterTenantContext, type RequirementCoverageStatus, type RequirementEvaluation, type SessionStatus, type SkillRequirement, type SystemHealth, type TargetStatus, type TargetType, type TranscriptItem, type VerificationStatus, createSessionSchema };

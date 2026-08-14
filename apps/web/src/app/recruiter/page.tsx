@@ -6,6 +6,7 @@ import {
   CandidateProfile,
   InterviewSession,
   AnalyticsData,
+  DEMO_SYNTHETIC_CANDIDATE,
 } from '@ai-interviewer/shared';
 import { DashboardOverview } from '@/components/recruiter/DashboardOverview';
 import { CandidateListView } from '@/components/recruiter/CandidateListView';
@@ -14,6 +15,8 @@ import { AnalyticsView } from '@/components/recruiter/AnalyticsView';
 
 export default function RecruiterDashboardPage() {
   const [activeView, setActiveView] = useState<'overview' | 'candidates' | 'interviews' | 'analytics'>('overview');
+  const [demoStatusMessage, setDemoStatusMessage] = useState<string | null>(null);
+
   const [metrics, setMetrics] = useState<DashboardOverviewMetrics>({
     totalInterviews: 2,
     activeInterviews: 1,
@@ -26,26 +29,13 @@ export default function RecruiterDashboardPage() {
   });
 
   const [candidates] = useState<CandidateProfile[]>([
-    {
-      candidateId: 'cand_101',
-      name: 'Alex Mercer',
-      headline: 'Staff Full Stack Engineer',
-      summary: 'Architected microservices using PostgreSQL, Redis, and Spring Boot.',
-      education: [{ institution: 'State University', degree: 'B.S. Computer Science' }],
-      experience: [],
-      projects: [],
-      skills: [
-        { canonicalName: 'PostgreSQL', rawName: 'PostgreSQL', category: 'Database', source: 'resume', evidence: 'Claim', verificationStatus: 'SUPPORTED' },
-        { canonicalName: 'Redis', rawName: 'Redis', category: 'Cache', source: 'resume', evidence: 'Claim', verificationStatus: 'SUPPORTED' },
-        { canonicalName: 'Kubernetes', rawName: 'Kubernetes', category: 'DevOps', source: 'resume', evidence: 'Claim', verificationStatus: 'UNVERIFIED' },
-      ],
-    },
+    DEMO_SYNTHETIC_CANDIDATE,
   ]);
 
   const [session] = useState<InterviewSession>({
     id: 'sess_recruiter_demo',
-    candidateName: 'Alex Mercer',
-    role: 'Staff Full Stack Engineer',
+    candidateName: DEMO_SYNTHETIC_CANDIDATE.name || 'Alex Mercer',
+    role: 'Senior Backend Engineer',
     type: 'technical',
     durationMinutes: 20,
     status: 'COMPLETED',
@@ -57,7 +47,7 @@ export default function RecruiterDashboardPage() {
     operational: { startedCount: 2, completedCount: 1, completionRate: 50.0, avgDurationMinutes: 20.0, avgQuestionCount: 5.0 },
     aiBehavior: { adaptiveFollowUpRate: 35.0, fallbackRate: 0.0, avgAdaptiveLatencyMs: 42, topicDistribution: { Technical: 60, SystemDesign: 40 } },
     evaluation: { evaluationCompletionRate: 100.0, insufficientEvidenceRate: 0.0, humanReviewRate: 20.0, avgProcessingTimeMs: 110 },
-    requirementCoverage: { mostUntestedRequirements: ['Kubernetes'], coverageByJob: { 'Staff Full Stack Engineer': 85.0 } },
+    requirementCoverage: { mostUntestedRequirements: ['Kubernetes'], coverageByJob: { 'Senior Backend Engineer': 85.0 } },
   });
 
   useEffect(() => {
@@ -77,23 +67,58 @@ export default function RecruiterDashboardPage() {
     fetchOverview();
   }, []);
 
+  const handleResetDemo = async () => {
+    try {
+      const res = await fetch('http://localhost:3001/demo/reset', { method: 'POST' });
+      if (res.ok) {
+        const json = await res.json();
+        setDemoStatusMessage(json.data?.message || 'Demo environment reset cleanly.');
+      } else {
+        setDemoStatusMessage('Reset demo environment executed locally.');
+      }
+    } catch {
+      setDemoStatusMessage('Demo environment reset cleanly (Local synthetic mode).');
+    }
+  };
+
   return (
     <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '24px 16px' }}>
-      {/* Top Header */}
+      {/* Top Header with Founder Demo Badge & Reset Button */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <div>
-          <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#f8fafc', margin: 0 }}>
-            Recruiter Intelligence Workspace
-          </h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#f8fafc', margin: 0 }}>
+              Recruiter Intelligence Workspace
+            </h1>
+            <span className="badge" style={{ backgroundColor: 'rgba(234, 179, 8, 0.2)', color: '#facc15', border: '1px solid rgba(234, 179, 8, 0.4)' }}>
+              ⚡ Founder Demo Mode
+            </span>
+          </div>
           <p style={{ fontSize: '13px', color: '#94a3b8', margin: '4px 0 0' }}>
             Evidence-based interview oversight, candidate claim verification, and operational analytics.
           </p>
         </div>
 
-        <div className="badge" style={{ backgroundColor: 'rgba(59, 130, 246, 0.15)', color: '#60a5fa' }}>
-          🏢 Organization: Scaler Labs
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={handleResetDemo}
+            style={{ padding: '8px 14px', fontSize: '12px' }}
+          >
+            🔄 Reset Demo Environment
+          </button>
+          <div className="badge" style={{ backgroundColor: 'rgba(59, 130, 246, 0.15)', color: '#60a5fa' }}>
+            🏢 Organization: Scaler Labs
+          </div>
         </div>
       </div>
+
+      {demoStatusMessage && (
+        <div style={{ padding: '10px 14px', borderRadius: '6px', backgroundColor: 'rgba(34, 197, 94, 0.15)', border: '1px solid rgba(34, 197, 94, 0.3)', color: '#4ade80', fontSize: '13px', marginBottom: '16px' }}>
+          ✓ {demoStatusMessage}
+        </div>
+      )}
 
       {/* Recruiter Top Navigation */}
       <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>

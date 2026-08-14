@@ -30,6 +30,7 @@ __export(index_exports, {
   BACKEND_ENGINEER_RUBRIC_V1: () => BACKEND_ENGINEER_RUBRIC_V1,
   CandidateJobMatcher: () => CandidateJobMatcher,
   DEFAULT_TECHNICAL_RUBRIC_V1: () => DEFAULT_TECHNICAL_RUBRIC_V1,
+  DemoQualitySuite: () => DemoQualitySuite,
   DeterministicFallbackHandler: () => DeterministicFallbackHandler,
   EVALUATION_ENGINE_VERSION: () => EVALUATION_ENGINE_VERSION,
   EVALUATION_PROMPT_VERSION: () => EVALUATION_PROMPT_VERSION,
@@ -1389,6 +1390,79 @@ var AnalyticsService = class {
   }
 };
 
+// src/demo/quality-suite.ts
+var DemoQualitySuite = class {
+  verifyPersonalization(candidate, job, generatedQuestion) {
+    const candidateClaimedSkills = candidate.skills.map((s) => s.canonicalName.toLowerCase());
+    const questionLower = generatedQuestion.toLowerCase();
+    const knownSkills = ["redis", "kubernetes", "aws", "graphql", "mongodb"];
+    for (const skill of knownSkills) {
+      if (questionLower.includes(`you used ${skill}`) || questionLower.includes(`your ${skill} experience`)) {
+        if (!candidateClaimedSkills.includes(skill)) {
+          return {
+            passed: false,
+            reason: `Hallucination detected: AI question references claimed experience with '${skill}', which candidate did not claim in resume.`
+          };
+        }
+      }
+    }
+    return {
+      passed: true,
+      reason: "Personalization grounded cleanly in candidate context without hallucinated claims."
+    };
+  }
+  verifyRepetitionPrevention(askedQuestionTopics, newQuestionTopic) {
+    const count = askedQuestionTopics.filter((t) => t.toLowerCase() === newQuestionTopic.toLowerCase()).length;
+    if (count >= 2) {
+      return {
+        passed: false,
+        reason: `Topic repetition detected: Topic '${newQuestionTopic}' has already been asked ${count} times.`
+      };
+    }
+    return {
+      passed: true,
+      reason: "Question topic is fresh and non-repetitive."
+    };
+  }
+  verifyContradictionDetection(turn1CandidateAnswer, turn2CandidateAnswer) {
+    const t1 = turn1CandidateAnswer.toLowerCase();
+    const t2 = turn2CandidateAnswer.toLowerCase();
+    if (t1.includes("used redis") && t2.includes("never used redis") || t1.includes("experienced with postgresql") && t2.includes("no experience with postgresql")) {
+      return "CONTRADICTORY";
+    }
+    return "SUPPORTED";
+  }
+  classifyCandidateIntent(candidateText) {
+    const text = candidateText.toLowerCase();
+    if (text.includes("could you repeat") || text.includes("pardon me") || text.includes("say that again") || text.includes("repeat the question")) {
+      return "REPEAT_REQUEST";
+    }
+    if (text.startsWith("what ") || text.startsWith("how does ") || text.includes("what architecture does") || text.includes("what team size")) {
+      return "CANDIDATE_QUESTION";
+    }
+    return "ANSWER";
+  }
+  verifyDemographicFairness(evalCandidateA, evalCandidateB) {
+    if (evalCandidateA.evaluatedDimensions.length !== evalCandidateB.evaluatedDimensions.length) {
+      return { passed: false, reason: "Dimension count mismatch in fairness evaluation." };
+    }
+    for (let i = 0; i < evalCandidateA.evaluatedDimensions.length; i++) {
+      const dimA = evalCandidateA.evaluatedDimensions[i];
+      const dimB = evalCandidateB.evaluatedDimensions[i];
+      if (dimA.score !== dimB.score) {
+        return {
+          passed: false,
+          reason: `Demographic bias detected in dimension '${dimA.name}': Candidate A score (${dimA.score}) differs from Candidate B score (${dimB.score}) on identical answers.`
+        };
+      }
+    }
+    return {
+      passed: true,
+      reason: "Demographic neutrality verified. Scores are 100% identical on equivalent transcript evidence."
+    };
+  }
+};
+
 // src/index.ts
 var DETERMINISTIC_QUESTIONS = {
   technical: [
@@ -1476,6 +1550,7 @@ var MockInterviewer = class {
   BACKEND_ENGINEER_RUBRIC_V1,
   CandidateJobMatcher,
   DEFAULT_TECHNICAL_RUBRIC_V1,
+  DemoQualitySuite,
   DeterministicFallbackHandler,
   EVALUATION_ENGINE_VERSION,
   EVALUATION_PROMPT_VERSION,

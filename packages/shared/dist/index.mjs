@@ -4053,8 +4053,68 @@ var createSessionSchema = external_exports.object({
 });
 
 // src/index.ts
-var PROJECT_PHASE = "Phase 10 \u2014 Production Hardening, Load Testing & Deployment";
+var DEMO_SYNTHETIC_CANDIDATE = {
+  candidateId: "cand_demo_alex",
+  name: "Alex Mercer",
+  headline: "Senior Backend Engineer",
+  summary: "Architected PrimeBank microservices handling high-throughput payments using Spring Boot, PostgreSQL indexing, and Redis write-through caching.",
+  education: [{ institution: "State University", degree: "B.S. Computer Science" }],
+  experience: [
+    {
+      company: "PrimeBank Financial",
+      role: "Senior Backend Engineer",
+      startDate: "2022-01",
+      endDate: "Present",
+      responsibilities: [
+        "Built PrimeBank payment gateway microservices handling 10,000+ RPS.",
+        "Optimized PostgreSQL database query performance with composite B-tree indexing.",
+        "Implemented Redis write-through caching with TTL eviction rules for volatile sessions."
+      ],
+      technologies: ["Spring Boot", "PostgreSQL", "Redis", "Docker"]
+    }
+  ],
+  projects: [
+    {
+      name: "PrimeBank High-Throughput Core",
+      description: "Distributed payment processing architecture with Redis cache and PostgreSQL isolation.",
+      technologies: ["Spring Boot", "PostgreSQL", "Redis"]
+    }
+  ],
+  skills: [
+    { canonicalName: "PostgreSQL", rawName: "Postgres", category: "Database", source: "resume", evidence: "Architected PrimeBank payment DB", verificationStatus: "SUPPORTED" },
+    { canonicalName: "Redis", rawName: "Redis", category: "Cache", source: "resume", evidence: "Implemented Redis caching", verificationStatus: "SUPPORTED" },
+    { canonicalName: "Kubernetes", rawName: "K8s", category: "DevOps", source: "resume", evidence: "Resume claim", verificationStatus: "UNVERIFIED" }
+  ],
+  organizationId: "org_scaler_demo"
+};
+var DEMO_SYNTHETIC_JOB = {
+  jobId: "job_demo_backend",
+  title: "Senior Backend Engineer",
+  company: "PrimeBank FinTech",
+  seniority: "Senior",
+  summary: "Seeking a Senior Backend Engineer to lead high-throughput financial API microservices, cache invalidation, and database query optimization.",
+  requiredSkills: [
+    { skill: "PostgreSQL", importance: "CORE", isRequired: true, evidence: "Transaction consistency and indexing" },
+    { skill: "System Design", importance: "CORE", isRequired: true, evidence: "High-throughput microservices architecture" },
+    { skill: "Redis", importance: "IMPORTANT", isRequired: true, evidence: "Caching & TTL eviction strategies" }
+  ],
+  preferredSkills: [
+    { skill: "Kubernetes", importance: "OPTIONAL", isRequired: false },
+    { skill: "AWS", importance: "OPTIONAL", isRequired: false }
+  ],
+  responsibilities: [
+    "Design and maintain scalable REST APIs.",
+    "Optimize PostgreSQL transaction isolation and database query performance.",
+    "Manage distributed caching with Redis."
+  ],
+  qualifications: ["5+ years software engineering experience", "Strong system design skills"],
+  domains: ["FinTech", "Distributed Systems"],
+  organizationId: "org_scaler_demo"
+};
+var PROJECT_PHASE = "Phase 11 \u2014 Founder Demo, Product Excellence & AI Interview Quality";
 export {
+  DEMO_SYNTHETIC_CANDIDATE,
+  DEMO_SYNTHETIC_JOB,
   PROJECT_PHASE,
   createSessionSchema
 };

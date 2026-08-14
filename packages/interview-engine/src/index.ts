@@ -16,6 +16,7 @@ export * from './evaluation/rubric';
 export * from './evaluation/evaluator';
 export * from './evaluation/human-review';
 export * from './analytics/analytics-service';
+export * from './demo/quality-suite';
 
 export interface InterviewInteractionProvider {
   start(): Promise<void>;

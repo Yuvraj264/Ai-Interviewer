@@ -1,43 +1,20 @@
 import { describe, it, expect } from 'vitest';
 import {
   PROJECT_PHASE,
-  DeepHealthStatus,
-  LoadTestResult,
+  DEMO_SYNTHETIC_CANDIDATE,
+  DEMO_SYNTHETIC_JOB,
 } from './index';
 
-describe('Shared Package Phase 10 Production Hardening Contracts', () => {
-  it('should define the correct Phase 10 project phase', () => {
-    expect(PROJECT_PHASE).toBe('Phase 10 — Production Hardening, Load Testing & Deployment');
+describe('Shared Package Phase 11 Demo Contracts & Fixtures', () => {
+  it('should define the correct Phase 11 project phase', () => {
+    expect(PROJECT_PHASE).toBe('Phase 11 — Founder Demo, Product Excellence & AI Interview Quality');
   });
 
-  it('should support DeepHealthStatus and LoadTestResult contracts', () => {
-    const health: DeepHealthStatus = {
-      status: 'ok',
-      timestamp: new Date().toISOString(),
-      uptime: 1200,
-      environment: 'production',
-      service: 'api-service',
-      services: {
-        database: true,
-        redis: true,
-        livekit: true,
-      },
-    };
-    expect(health.status).toBe('ok');
-    expect(health.services.database).toBe(true);
+  it('should export valid DEMO_SYNTHETIC_CANDIDATE and DEMO_SYNTHETIC_JOB fixtures', () => {
+    expect(DEMO_SYNTHETIC_CANDIDATE.name).toBe('Alex Mercer');
+    expect(DEMO_SYNTHETIC_CANDIDATE.skills.length).toBeGreaterThan(0);
 
-    const loadResult: LoadTestResult = {
-      concurrency: 50,
-      durationSeconds: 10,
-      totalRequests: 500,
-      rps: 50,
-      p50Ms: 12,
-      p95Ms: 45,
-      p99Ms: 85,
-      errorRatePercentage: 0.0,
-      bottleneck: 'None (Baseline OK)',
-    };
-    expect(loadResult.rps).toBe(50);
-    expect(loadResult.p95Ms).toBe(45);
+    expect(DEMO_SYNTHETIC_JOB.title).toBe('Senior Backend Engineer');
+    expect(DEMO_SYNTHETIC_JOB.requiredSkills.length).toBeGreaterThan(0);
   });
 });

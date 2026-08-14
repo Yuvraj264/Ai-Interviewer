@@ -4,24 +4,19 @@ Production-oriented AI Voice Interviewer platform designed to conduct interactiv
 
 ---
 
-## Current Status: Phase 10 — Production Hardening, Load Testing & Deployment
+## Current Status: Phase 11 — Founder Demo, Product Excellence & AI Interview Quality
 
-The repository is currently at **Phase 10 (Production Hardening, Load Testing & Deployment)**. The system is hardened for production concurrency, security, observability, and resilience using a modular monolith containerized architecture.
+The repository is currently at **Phase 11 (Founder Demo, Product Excellence & AI Interview Quality)**. The system features a guided **Founder Demo Mode**, synthetic demo candidate **Alex Mercer**, REST demo seeding endpoint (`POST /demo/reset`), AI Quality Test Suite (`DemoQualitySuite`), 5-minute [`DEMO_SCRIPT.md`](file:///Users/yuvraj/Desktop/projects/Ai%20Interviewer/DEMO_SCRIPT.md), and [`DEMO_CHECKLIST.md`](file:///Users/yuvraj/Desktop/projects/Ai%20Interviewer/DEMO_CHECKLIST.md).
 
 ---
 
-## Key Production Features (Phase 10)
+## Key Founder Demo Highlights
 
-- **Fail-Fast Startup Validation**: Startup checks (`packages/config`) validate production credentials (`DATABASE_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`, `OPENAI_API_KEY`) at boot time.
-- **Structured JSON Logging & PII Redaction**: `StructuredLoggerService` emits JSON logs with correlation IDs (`X-Correlation-ID`) while sanitizing candidate PII, transcripts, tokens, and keys.
-- **Liveness & Deep Readiness Probes**:
-  - `GET /health`: Liveness status & uptime.
-  - `GET /health/readiness`: Deep dependency health check (PostgreSQL, Redis, LiveKit WebRTC).
-- **Graceful Shutdown**: Listens to `SIGTERM` / `SIGINT` to drain requests and cleanly close database and Redis pools.
-- **Rate Limiting & Security Hardening**: Helmet security headers, CORS origin restrictions, and rate-limiting guard (120 req/min).
-- **Realtime WebRTC Resilience**: `handleReconnection()` auto-reconnects and recovers session state on WebRTC network dropouts.
-- **Load Testing & Benchmarking Suite**: `LoadTester` (`infra/load-tests/benchmark.ts`) evaluating concurrency, RPS, `p50`/`p95`/`p99` latency, and error rates.
-- **Production Containerization**: Multi-stage `Dockerfile` executing under a non-root `node` user, `.dockerignore`, and `RUNBOOK.md`.
+- **Resume & Job Personalization**: AI interviewer grounds questions in candidate claims (Alex Mercer, PrimeBank microservices, PostgreSQL indexing, Redis caching) without fabricating un-claimed experience.
+- **Adaptive Probe vs Scripted Bot**: AI detects candidate evidence claims, identifies evidence gaps, and selects focused follow-ups dynamically (`STRONG ANSWER` -> `DEEPER FOLLOW-UP`, `WEAK ANSWER` -> `CLARIFIES/PROBES`).
+- **Evidence Explorer Drill-Down**: Recruiter clicks evidence card -> navigates directly to exact transcript turn.
+- **AI Quality Test Suite**: `DemoQualitySuite` (`packages/interview-engine/src/demo/quality-suite.ts`) verifying personalization, repetition prevention, contradiction detection (`CONTRADICTORY`), candidate question recognition, and demographic fairness.
+- **Isolated Demo Seeding Endpoint**: `POST /demo/reset` idempotently seeds synthetic candidate Alex Mercer and Senior Backend Engineer job description.
 
 ---
 
@@ -30,6 +25,11 @@ The repository is currently at **Phase 10 (Production Hardening, Load Testing & 
 ### Start All Development Applications
 ```bash
 pnpm dev
+```
+
+### Reset Founder Demo Environment
+```bash
+curl -X POST http://localhost:3001/demo/reset
 ```
 
 ### Run Linter
@@ -52,13 +52,10 @@ pnpm test
 pnpm build
 ```
 
-### Run Production Container Build
-```bash
-docker build -t ai-interviewer:v1.0.0 .
-```
-
 ---
 
-## Operational Documentation
+## Guided Demo Documentation
 
-Refer to [`RUNBOOK.md`](file:///Users/yuvraj/Desktop/projects/Ai%20Interviewer/RUNBOOK.md) for complete operational procedures, health probes, incident response, rollbacks, and database backups.
+- Refer to [`DEMO_SCRIPT.md`](file:///Users/yuvraj/Desktop/projects/Ai%20Interviewer/DEMO_SCRIPT.md) for the 5-minute guided founder demo script.
+- Refer to [`DEMO_CHECKLIST.md`](file:///Users/yuvraj/Desktop/projects/Ai%20Interviewer/DEMO_CHECKLIST.md) for pre-flight live demo readiness checks.
+- Refer to [`RUNBOOK.md`](file:///Users/yuvraj/Desktop/projects/Ai%20Interviewer/RUNBOOK.md) for operational deployment procedures.
