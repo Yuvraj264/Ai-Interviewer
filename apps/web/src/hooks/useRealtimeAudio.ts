@@ -62,15 +62,6 @@ export function useRealtimeAudio(sessionId: string): UseRealtimeAudioResult {
       // 1. Fetch short-lived JWT token from backend API
       const { token, url } = await InterviewApiClient.getRealtimeToken(sessionId);
 
-      // Pre-flight reachability check for local dev LiveKit server to avoid un-caught browser console WebSocket error logs
-      if (url.includes('localhost:7880') || url.includes('127.0.0.1:7880')) {
-        try {
-          await fetch('http://localhost:7880', { method: 'HEAD', mode: 'no-cors' });
-        } catch {
-          throw new Error('LiveKit WebRTC server is offline (ws://localhost:7880). The interview will continue seamlessly in Simulated Interactive Mode via the UI controls.');
-        }
-      }
-
       // 2. Request user microphone permission
       let localTrack: LocalAudioTrack;
       try {
