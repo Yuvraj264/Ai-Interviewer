@@ -4,9 +4,33 @@ Production-oriented AI Voice Interviewer platform designed to conduct interactiv
 
 ---
 
-## Current Status: Phase 1 — Repository Foundation
+## Current Status: Phase 2 — Candidate Interview Shell
 
-The repository is currently at **Phase 1 (Repository Foundation)**. Infrastructure and workspace scaffolding are operational. Business logic, AI model connections, and audio streaming are intentionally omitted at this phase.
+The repository is currently at **Phase 2 (Candidate Interview Shell)**. A candidate-facing interview experience is fully operational, powered by a deterministic **Mock Interviewer** service and server-authoritative session REST APIs. Realtime AI model connections and WebRTC audio streaming remain deferred to Phase 3/4.
+
+---
+
+## Candidate Flow (Phase 2)
+
+```text
+Landing Page
+      ↓
+Interview Setup Form
+      ↓
+Create Interview Session (POST /interviews)
+      ↓
+Waiting Room
+      ↓
+Start Interview (POST /interviews/:id/start)
+      ↓
+Interview Shell (Mock Engine Q&A + Progress + Countdown Timer)
+      ↓
+End Interview Confirmation Dialog
+      ↓
+Complete Interview (POST /interviews/:id/end)
+      ↓
+Completion Screen
+```
 
 ---
 
@@ -16,66 +40,33 @@ The repository is currently at **Phase 1 (Repository Foundation)**. Infrastructu
 ai-interviewer/
 │
 ├── apps/
-│   ├── web/           # Next.js 14 App Router web client
-│   ├── api/           # NestJS API service exposing GET /health
-│   └── agent/         # Node.js / TypeScript LiveKit Agent runner shell
+│   ├── web/                     # Next.js 14 candidate UI application (Port 3000)
+│   ├── api/                     # NestJS backend APIs for session lifecycle (Port 3001)
+│   └── agent/                   # Node.js / TypeScript LiveKit Agent runner shell
 │
 ├── packages/
-│   ├── shared/        # System contracts, types, and constants
-│   ├── interview-engine/ # State machine placeholder shell
-│   └── config/        # Environment schema validation (Zod)
+│   ├── shared/                  # Session contracts, schemas (Zod), and types
+│   ├── interview-engine/        # MockInterviewer & InterviewInteractionProvider interface
+│   └── config/                  # Centralized environment validation (Zod)
 │
 ├── infra/
-│   └── docker-compose.yml # PostgreSQL 16 + Valkey 7.2 local services
+│   └── docker-compose.yml       # PostgreSQL 16 + Valkey 7.2 local services
 │
-├── flow.md            # Execution workflow and status log
-├── context.md         # Architecture record
-├── package.json       # Root monorepo configuration
-├── pnpm-workspace.yaml# pnpm workspace definition
-└── turbo.json         # Turborepo task pipeline configuration
+├── flow.md                      # Execution workflow log
+├── context.md                   # Technical context record
+├── README.md                    # Root documentation
+└── package.json                 # Monorepo root package.json
 ```
 
 ---
 
-## Prerequisites
+## API Endpoints (Phase 2)
 
-- **Node.js**: `>= 18.0.0`
-- **pnpm**: `>= 8.0.0` (`pnpm -v`)
-- **Docker & Docker Compose**: Installed and running
-
----
-
-## Installation
-
-Clone the repository and install dependencies:
-
-```bash
-pnpm install
-```
-
----
-
-## Environment Setup
-
-Copy `.env.example` to create your local `.env`:
-
-```bash
-cp .env.example .env
-```
-
----
-
-## Starting Local Infrastructure (PostgreSQL & Valkey)
-
-Launch PostgreSQL 16 and Valkey using Docker Compose:
-
-```bash
-# Start infrastructure containers
-docker compose up -d
-
-# Stop infrastructure containers
-docker compose down
-```
+- `GET  /health`: Health monitoring endpoint
+- `POST /interviews`: Create candidate interview session
+- `GET  /interviews/:id`: Retrieve session status (supports session recovery on refresh)
+- `POST /interviews/:id/start`: Transition session status to `IN_PROGRESS`
+- `POST /interviews/:id/end`: Transition session status to `COMPLETED`
 
 ---
 
@@ -96,7 +87,7 @@ pnpm lint
 pnpm typecheck
 ```
 
-### Run Tests
+### Run Unit Tests
 ```bash
 pnpm test
 ```
@@ -108,11 +99,11 @@ pnpm build
 
 ---
 
-## What Has NOT Been Implemented Yet (Intentionally Excluded in Phase 1)
+## What Has NOT Been Implemented Yet (Intentionally Excluded in Phase 2)
 
 - OpenAI API & Realtime model connections
 - LiveKit rooms & WebRTC audio streaming
 - Microphone / Browser audio capture
-- Candidate interview state machine & adaptive questioning
-- Database models, migrations, & persistence schemas
-- Authentication & payment gateways
+- Speech-to-Text (STT) or Text-to-Speech (TTS)
+- Adaptive AI question generation & candidate evaluation scoring
+- Candidate database tables, migrations, & authentication

@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@ai-interviewer/config": "workspace:*",
+    "@ai-interviewer/interview-engine": "workspace:*",
     "@ai-interviewer/shared": "workspace:*",
     "next": "^14.2.3",
     "react": "^18.3.1",

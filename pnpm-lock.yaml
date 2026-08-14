@@ -106,6 +106,9 @@ importers:
       '@ai-interviewer/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@ai-interviewer/interview-engine':
+        specifier: workspace:*
+        version: link:../../packages/interview-engine
       '@ai-interviewer/shared':
         specifier: workspace:*
         version: link:../../packages/shared

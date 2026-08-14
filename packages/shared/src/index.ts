@@ -1,3 +1,22 @@
+export * from './session.schema';
+
+export type SessionStatus = 'CREATED' | 'WAITING' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+export type InterviewStage = 'INTRO' | 'BACKGROUND' | 'TECHNICAL' | 'BEHAVIORAL' | 'COMPLETION';
+export type InterviewType = 'technical' | 'behavioral' | 'mixed';
+
+export interface InterviewSession {
+  id: string;
+  candidateName: string;
+  role: string;
+  type: InterviewType;
+  durationMinutes: number;
+  status: SessionStatus;
+  currentStage: InterviewStage;
+  createdAt: string;
+  startedAt?: string;
+  completedAt?: string;
+}
+
 export interface SystemHealth {
   status: 'ok' | 'degraded' | 'down';
   timestamp: string;
@@ -16,4 +35,4 @@ export interface ApiResponse<T = unknown> {
   timestamp: string;
 }
 
-export const PROJECT_PHASE = 'Phase 1 — Foundation' as const;
+export const PROJECT_PHASE = 'Phase 2 — Candidate Interview Shell' as const;

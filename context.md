@@ -17,60 +17,50 @@ The AI Interviewer platform is a production-oriented system for conducting real-
 7. **`packages/config`**: Centralized environment variable validation using `zod`.
 8. **`infra/`**: Local development infrastructure via Docker Compose (PostgreSQL 16 and Valkey).
 
-### Why Each Component Was Introduced
-- **pnpm + Turborepo**: Provides fast, deterministic monorepo dependency resolution and cached workspace task execution (`build`, `lint`, `test`, `typecheck`).
-- **Next.js (`apps/web`)**: Provides modern React-based SSR/SSG frontend capability for candidate interview interface and recruiter view.
-- **NestJS (`apps/api`)**: Enterprise Node.js framework for robust backend services, persistence APIs, and auth integrations.
-- **Node.js Agent Shell (`apps/agent`)**: Dedicated entry point for high-concurrency realtime voice processing via LiveKit Agents without polluting HTTP API server bounds.
-- **Config Package (`packages/config`)**: Prevents untyped `process.env` access throughout application code by validating environment schema at startup.
+---
 
-### Technology Decisions & Versions
-- **Package Manager**: pnpm `11.21.0`
-- **Monorepo Orchestration**: Turborepo `2.0.0`
-- **TypeScript**: `5.4.5` (Strict mode enforced)
-- **Frontend Framework**: Next.js `14.2.3` / React `18.3.1`
-- **Backend Framework**: NestJS `10.3.8`
-- **Testing Engine**: Vitest `1.6.0`
-- **Validation**: Zod `3.23.8`
-- **Database Infrastructure**: PostgreSQL `16-alpine`
-- **Cache/Queue Infrastructure**: Valkey `7.2-alpine`
+## Phase 2 Implementation Record
 
-### Dependencies Added
-- `turborepo` — Workspace build orchestration
-- `typescript` — Strict type system
-- `eslint` & `@typescript-eslint` — Static code analysis
-- `prettier` — Automated code formatting
-- `vitest` — Fast unit and smoke testing framework
-- `zod` & `dotenv` — Type-safe configuration management
-- `next`, `react`, `react-dom` — Web UI framework
-- `@nestjs/core`, `@nestjs/common`, `@nestjs/platform-express` — Backend framework
-- `tsup` — Fast TypeScript package builder for internal workspace packages
+### What Was Built
+1. **Shared Session Contracts (`packages/shared`)**: Defined `SessionStatus`, `InterviewStage`, `InterviewType`, `InterviewSession` contracts, and `createSessionSchema` using Zod for client/server validation.
+2. **Mock Interviewer Engine (`packages/interview-engine`)**: Created `InterviewInteractionProvider` contract and `MockInterviewer` engine providing deterministic Q&A flows for technical, behavioral, and mixed interviews.
+3. **Server-Authoritative REST API (`apps/api`)**: Developed `InterviewsService` and `InterviewsController` exposing endpoints: `POST /interviews`, `GET /interviews/:id`, `POST /interviews/:id/start`, and `POST /interviews/:id/end`.
+4. **Candidate UI Flow (`apps/web`)**:
+   - `LandingView`: Candidate introduction card.
+   - `SetupForm`: Validated form capturing candidate parameters.
+   - `WaitingRoom`: Pre-interview summary & start trigger.
+   - `InterviewShell`: Core Q&A screen with header, server-synced countdown timer (`SessionTimer`), progress bar, mock questions, and response buttons.
+   - `EndInterviewDialog`: Modal dialog confirming early or final conclusion.
+   - `CompletionScreen`: Conclusion view stating responses are recorded for evaluation.
+   - `ErrorMessage`: Accessible error display for 404 or connection failures.
+   - `Session Recovery`: Browser refresh on `/interview/[sessionId]` fetches authoritative state from `GET /interviews/:id` and restores exact UI view.
 
-### Environment Configuration
-Centralized configuration is exposed via `@ai-interviewer/config`. `.env.example` at the root lists all expected parameters (`PORT`, `API_PORT`, `DATABASE_URL`, `VALKEY_URL`, etc.). Applications load and validate environment variables before launching.
+### Architectural Reasoning
+- **UI Decoupling**: React components consume `InterviewInteractionProvider` rather than implementing interview state machine logic directly. This allows swapping `MockInterviewer` with LiveKit Realtime Agent in Phase 3 without altering the UI.
+- **Server-Authoritative Session State**: The server owns status (`CREATED`, `IN_PROGRESS`, `COMPLETED`) and timestamps (`startedAt`, `completedAt`). The client cannot forge completion or timer values.
+- **Why Mock Interviewer Exists**: Decouples UI candidate experience validation from complex AI/WebRTC infrastructure, enabling fast testing of session lifecycle.
 
-### Infrastructure
-Local infrastructure runs via Docker Compose (`docker-compose up -d`):
-- **PostgreSQL**: Port 5432, container `ai_interviewer_postgres`, database `ai_interviewer_dev`.
-- **Valkey**: Port 6379, container `ai_interviewer_valkey`.
+### API Architecture
+- `POST /interviews`: Validates input with `createSessionSchema`, creates session ID (`sess_<timestamp>_<random>`), returns session object.
+- `GET /interviews/:id`: Returns session or 404 error.
+- `POST /interviews/:id/start`: Transitions state from `CREATED`/`WAITING` -> `IN_PROGRESS` and records `startedAt`.
+- `POST /interviews/:id/end`: Transitions state to `COMPLETED` and records `completedAt`.
 
-### Testing Strategy
-- Unit tests in `packages/shared`, `packages/config`, `packages/interview-engine`, `apps/api`, and `apps/agent`.
-- Configured via root `vitest.config.ts`.
+### Testing & Verification
+- Unit tests in `packages/shared`, `packages/interview-engine`, `apps/api`, and `apps/web`.
+- Verification passed for `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm build`.
 
-### Verification Status
-- **lint**: PASS
-- **typecheck**: PASS
-- **test**: PASS
-- **build**: PASS
+### Security Considerations
+- Session IDs use unique random suffixes (`sess_<timestamp>_<hash>`).
+- Client cannot set status, stage, or start/completed timestamps directly; status transitions are enforced by `InterviewsService`.
 
 ### Known Limitations
-Phase 1 is engineering infrastructure only. It explicitly does **NOT** contain:
-- OpenAI API calls or OpenAI Realtime integration
-- LiveKit WebRTC audio rooms or agent connections
-- Microphone or browser audio capture
-- Interview state machines, question generation, or scoring logic
-- Candidate database tables, migrations, or authentication
+Explicitly deferred to future phases:
+- No real microphone audio access
+- No WebRTC or LiveKit rooms
+- No OpenAI or OpenAI Realtime APIs
+- No STT (Speech-to-Text) or TTS (Text-to-Speech)
+- No adaptive AI question generation or candidate evaluation scoring
 
 ### Next Phase
-**Phase 2 — Candidate Interview Shell**
+**Phase 3 — Realtime Audio Foundation**
