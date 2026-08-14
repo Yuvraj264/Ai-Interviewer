@@ -1,4 +1,4 @@
-import { InterviewSession, CandidateProfile, JobProfile, CandidateJobProfile } from '@ai-interviewer/shared';
+import { InterviewSession, CandidateProfile, JobProfile, CandidateJobProfile, InterviewEvaluation, HumanReview, HumanReviewOverride } from '@ai-interviewer/shared';
 import { BoundedInterviewContext } from '@ai-interviewer/interview-engine';
 export declare class InterviewsService {
     private sessions;
@@ -6,10 +6,14 @@ export declare class InterviewsService {
     private jobProfiles;
     private matches;
     private precomputedContexts;
+    private evaluations;
+    private transcripts;
     private resumeParser;
     private jdParser;
     private matcher;
     private contextBuilder;
+    private evaluator;
+    private humanReviewService;
     createSession(payload: {
         candidateName: string;
         role: string;
@@ -31,6 +35,17 @@ export declare class InterviewsService {
     prepareInterview(sessionId: string): {
         match: CandidateJobProfile;
         turnContext: BoundedInterviewContext;
+    };
+    evaluateSession(sessionId: string): InterviewEvaluation;
+    getEvaluation(sessionId: string): InterviewEvaluation;
+    submitHumanReview(sessionId: string, payload: {
+        reviewerId: string;
+        reviewerName: string;
+        humanOverrides: Record<string, HumanReviewOverride>;
+        overallDecisionNote?: string;
+    }): {
+        evaluation: InterviewEvaluation;
+        review: HumanReview;
     };
     private recalculateMatch;
 }

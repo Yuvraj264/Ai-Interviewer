@@ -1,4 +1,4 @@
-import { EngineQuestion, InterviewType, InterviewConfig, InterviewEngineState, InterviewStage, AnswerAnalysis, QualityCategory, AdaptiveDecision, AdaptiveDecisionRecord, CandidateProfile, JobProfile, CandidateJobProfile, InterviewTarget } from '@ai-interviewer/shared';
+import { EngineQuestion, InterviewType, InterviewConfig, InterviewEngineState, InterviewStage, AnswerAnalysis, QualityCategory, AdaptiveDecision, AdaptiveDecisionRecord, CandidateProfile, JobProfile, CandidateJobProfile, InterviewTarget, EvaluationDimension, TranscriptItem, InterviewEvaluation, HumanReviewOverride, HumanReview } from '@ai-interviewer/shared';
 
 interface InterviewerPromptContext {
     candidateName?: string;
@@ -157,6 +157,45 @@ declare class InterviewContextBuilder {
     buildTurnContext(candidate: CandidateProfile, job: JobProfile, match: CandidateJobProfile, currentTopic?: string): BoundedInterviewContext;
 }
 
+interface RubricDefinition {
+    version: string;
+    role: string;
+    dimensions: Array<Omit<EvaluationDimension, 'score' | 'status' | 'confidence' | 'evidence' | 'limitations'>>;
+}
+declare const BACKEND_ENGINEER_RUBRIC_V1: RubricDefinition;
+declare const DEFAULT_TECHNICAL_RUBRIC_V1: RubricDefinition;
+declare class EvaluationRubric {
+    static getRubricForRole(role: string): RubricDefinition;
+}
+
+declare const EVALUATION_ENGINE_VERSION = "EVALUATION_ENGINE_V1";
+declare const EVALUATION_PROMPT_VERSION = "EVALUATION_PROMPT_V1";
+interface EvaluationInput {
+    interviewId: string;
+    transcript: TranscriptItem[];
+    candidateProfile?: CandidateProfile;
+    jobProfile?: JobProfile;
+}
+declare class EvidenceEvaluator {
+    evaluateInterview(input: EvaluationInput): InterviewEvaluation;
+    private evaluateDimension;
+    private evaluateRequirementCoverage;
+    private containsPromptInjection;
+}
+
+declare class HumanReviewService {
+    private reviews;
+    createReview(payload: {
+        evaluationId: string;
+        reviewerId: string;
+        reviewerName: string;
+        humanOverrides: Record<string, HumanReviewOverride>;
+        overallDecisionNote?: string;
+    }): HumanReview;
+    getReviewsForEvaluation(evaluationId: string): HumanReview[];
+    applyHumanReview(evaluation: InterviewEvaluation, review: HumanReview): InterviewEvaluation;
+}
+
 interface InterviewInteractionProvider {
     start(): Promise<void>;
     submitCandidateResponse(response: string): Promise<void>;
@@ -197,4 +236,4 @@ declare class MockInterviewer implements InterviewInteractionProvider {
     private notifyState;
 }
 
-export { ADAPTIVE_DECISION_VERSION, ANSWER_ANALYSIS_VERSION, AdaptiveDecisionMaker, type AdaptiveEngineResult, AdaptiveQuestionSelector, AdaptiveQuestioningEngine, type AnalyzerOptions, AnswerAnalyzer, type BoundedInterviewContext, CandidateJobMatcher, DeterministicFallbackHandler, type FallbackReason, InterviewAlreadyCompletedError, InterviewContextBuilder, InterviewEngine, type InterviewInteractionProvider, type InterviewerPromptContext, InvalidTransitionError, JD_PARSER_VERSION, JobDescriptionParser, MockInterviewer, type MockInterviewerState, QUESTION_BANK, QuestionBudgetExceededError, type QuestionSelectorOptions, RESUME_PARSER_VERSION, ResumeParser, SessionNotFoundError, SkillNormalizer, buildInterviewerInstructions, getQuestionsForType };
+export { ADAPTIVE_DECISION_VERSION, ANSWER_ANALYSIS_VERSION, AdaptiveDecisionMaker, type AdaptiveEngineResult, AdaptiveQuestionSelector, AdaptiveQuestioningEngine, type AnalyzerOptions, AnswerAnalyzer, BACKEND_ENGINEER_RUBRIC_V1, type BoundedInterviewContext, CandidateJobMatcher, DEFAULT_TECHNICAL_RUBRIC_V1, DeterministicFallbackHandler, EVALUATION_ENGINE_VERSION, EVALUATION_PROMPT_VERSION, type EvaluationInput, EvaluationRubric, EvidenceEvaluator, type FallbackReason, HumanReviewService, InterviewAlreadyCompletedError, InterviewContextBuilder, InterviewEngine, type InterviewInteractionProvider, type InterviewerPromptContext, InvalidTransitionError, JD_PARSER_VERSION, JobDescriptionParser, MockInterviewer, type MockInterviewerState, QUESTION_BANK, QuestionBudgetExceededError, type QuestionSelectorOptions, RESUME_PARSER_VERSION, ResumeParser, type RubricDefinition, SessionNotFoundError, SkillNormalizer, buildInterviewerInstructions, getQuestionsForType };

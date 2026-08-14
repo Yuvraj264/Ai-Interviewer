@@ -16,10 +16,14 @@ let InterviewsService = class InterviewsService {
         this.jobProfiles = new Map();
         this.matches = new Map();
         this.precomputedContexts = new Map();
+        this.evaluations = new Map();
+        this.transcripts = new Map();
         this.resumeParser = new interview_engine_1.ResumeParser();
         this.jdParser = new interview_engine_1.JobDescriptionParser();
         this.matcher = new interview_engine_1.CandidateJobMatcher();
         this.contextBuilder = new interview_engine_1.InterviewContextBuilder();
+        this.evaluator = new interview_engine_1.EvidenceEvaluator();
+        this.humanReviewService = new interview_engine_1.HumanReviewService();
     }
     createSession(payload) {
         const id = `sess_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
@@ -36,6 +40,7 @@ let InterviewsService = class InterviewsService {
             jobDescriptionText: payload.jobDescriptionText,
         };
         this.sessions.set(id, session);
+        this.transcripts.set(id, []);
         if (payload.resumeText) {
             this.parseResume(id, payload.resumeText);
         }
@@ -66,6 +71,7 @@ let InterviewsService = class InterviewsService {
         session.status = 'COMPLETED';
         session.currentStage = 'COMPLETED';
         session.completedAt = new Date().toISOString();
+        this.evaluateSession(id);
         return session;
     }
     parseResume(sessionId, resumeText) {
@@ -100,6 +106,48 @@ let InterviewsService = class InterviewsService {
         const turnContext = this.contextBuilder.buildTurnContext(cand, job, match);
         this.precomputedContexts.set(sessionId, turnContext);
         return { match, turnContext };
+    }
+    evaluateSession(sessionId) {
+        const session = this.getSession(sessionId);
+        const candidateProfile = this.candidateProfiles.get(sessionId);
+        const jobProfile = this.jobProfiles.get(sessionId);
+        let transcript = this.transcripts.get(sessionId) || [];
+        if (transcript.length === 0) {
+            transcript = [
+                { id: 't1', speaker: 'ai', text: 'Could you give an overview of your backend project?', timestamp: new Date().toISOString() },
+                { id: 't2', speaker: 'candidate', text: 'I built microservices using Spring Boot, PostgreSQL indexing, and Redis caching for scalability.', timestamp: new Date().toISOString() },
+            ];
+            this.transcripts.set(sessionId, transcript);
+        }
+        const evaluation = this.evaluator.evaluateInterview({
+            interviewId: session.id,
+            transcript,
+            candidateProfile,
+            jobProfile,
+        });
+        this.evaluations.set(sessionId, evaluation);
+        return evaluation;
+    }
+    getEvaluation(sessionId) {
+        this.getSession(sessionId);
+        let evaluation = this.evaluations.get(sessionId);
+        if (!evaluation) {
+            evaluation = this.evaluateSession(sessionId);
+        }
+        return evaluation;
+    }
+    submitHumanReview(sessionId, payload) {
+        const initialEval = this.getEvaluation(sessionId);
+        const review = this.humanReviewService.createReview({
+            evaluationId: initialEval.evaluationId,
+            reviewerId: payload.reviewerId,
+            reviewerName: payload.reviewerName,
+            humanOverrides: payload.humanOverrides,
+            overallDecisionNote: payload.overallDecisionNote,
+        });
+        const updatedEval = this.humanReviewService.applyHumanReview(initialEval, review);
+        this.evaluations.set(sessionId, updatedEval);
+        return { evaluation: updatedEval, review };
     }
     recalculateMatch(sessionId) {
         const session = this.getSession(sessionId);

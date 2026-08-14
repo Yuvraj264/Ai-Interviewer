@@ -1,4 +1,4 @@
-import { ApiResponse, InterviewSession, CandidateProfile, JobProfile, CandidateJobProfile } from '@ai-interviewer/shared';
+import { ApiResponse, InterviewSession, CandidateProfile, JobProfile, CandidateJobProfile, InterviewEvaluation, HumanReview, HumanReviewOverride } from '@ai-interviewer/shared';
 import { BoundedInterviewContext } from '@ai-interviewer/interview-engine';
 import { InterviewsService } from './interviews.service';
 export declare class InterviewsController {
@@ -29,6 +29,17 @@ export declare class InterviewsController {
     prepareInterview(id: string): ApiResponse<{
         match: CandidateJobProfile;
         turnContext: BoundedInterviewContext;
+    }>;
+    evaluateSession(id: string): ApiResponse<InterviewEvaluation>;
+    getEvaluation(id: string): ApiResponse<InterviewEvaluation>;
+    submitHumanReview(id: string, body: {
+        reviewerId: string;
+        reviewerName: string;
+        humanOverrides: Record<string, HumanReviewOverride>;
+        overallDecisionNote?: string;
+    }): ApiResponse<{
+        evaluation: InterviewEvaluation;
+        review: HumanReview;
     }>;
 }
 //# sourceMappingURL=interviews.controller.d.ts.map

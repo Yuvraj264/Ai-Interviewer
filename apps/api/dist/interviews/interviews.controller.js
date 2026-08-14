@@ -83,6 +83,30 @@ let InterviewsController = class InterviewsController {
             timestamp: new Date().toISOString(),
         };
     }
+    evaluateSession(id) {
+        const evaluation = this.interviewsService.evaluateSession(id);
+        return {
+            success: true,
+            data: evaluation,
+            timestamp: new Date().toISOString(),
+        };
+    }
+    getEvaluation(id) {
+        const evaluation = this.interviewsService.getEvaluation(id);
+        return {
+            success: true,
+            data: evaluation,
+            timestamp: new Date().toISOString(),
+        };
+    }
+    submitHumanReview(id, body) {
+        const result = this.interviewsService.submitHumanReview(id, body);
+        return {
+            success: true,
+            data: result,
+            timestamp: new Date().toISOString(),
+        };
+    }
 };
 exports.InterviewsController = InterviewsController;
 __decorate([
@@ -143,6 +167,28 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Object)
 ], InterviewsController.prototype, "prepareInterview", null);
+__decorate([
+    (0, common_1.Post)(':id/evaluate'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Object)
+], InterviewsController.prototype, "evaluateSession", null);
+__decorate([
+    (0, common_1.Get)(':id/evaluation'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Object)
+], InterviewsController.prototype, "getEvaluation", null);
+__decorate([
+    (0, common_1.Post)(':id/evaluation/review'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Object)
+], InterviewsController.prototype, "submitHumanReview", null);
 exports.InterviewsController = InterviewsController = __decorate([
     (0, common_1.Controller)('interviews'),
     __metadata("design:paramtypes", [interviews_service_1.InterviewsService])

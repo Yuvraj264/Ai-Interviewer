@@ -12,6 +12,9 @@ export * from './intelligence/resume-parser';
 export * from './intelligence/jd-parser';
 export * from './intelligence/matcher';
 export * from './intelligence/context-builder';
+export * from './evaluation/rubric';
+export * from './evaluation/evaluator';
+export * from './evaluation/human-review';
 
 export interface InterviewInteractionProvider {
   start(): Promise<void>;

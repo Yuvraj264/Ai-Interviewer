@@ -4,6 +4,10 @@ import {
   CandidateProfile,
   JobProfile,
   CandidateJobProfile,
+  InterviewEvaluation,
+  HumanReview,
+  HumanReviewOverride,
+  TranscriptItem,
 } from '@ai-interviewer/shared';
 import {
   ResumeParser,
@@ -11,6 +15,8 @@ import {
   CandidateJobMatcher,
   InterviewContextBuilder,
   BoundedInterviewContext,
+  EvidenceEvaluator,
+  HumanReviewService,
 } from '@ai-interviewer/interview-engine';
 
 @Injectable()
@@ -20,11 +26,15 @@ export class InterviewsService {
   private jobProfiles = new Map<string, JobProfile>();
   private matches = new Map<string, CandidateJobProfile>();
   private precomputedContexts = new Map<string, BoundedInterviewContext>();
+  private evaluations = new Map<string, InterviewEvaluation>();
+  private transcripts = new Map<string, TranscriptItem[]>();
 
   private resumeParser = new ResumeParser();
   private jdParser = new JobDescriptionParser();
   private matcher = new CandidateJobMatcher();
   private contextBuilder = new InterviewContextBuilder();
+  private evaluator = new EvidenceEvaluator();
+  private humanReviewService = new HumanReviewService();
 
   createSession(payload: {
     candidateName: string;
@@ -48,8 +58,8 @@ export class InterviewsService {
       jobDescriptionText: payload.jobDescriptionText,
     };
     this.sessions.set(id, session);
+    this.transcripts.set(id, []);
 
-    // Auto-parse if initial resume/JD provided
     if (payload.resumeText) {
       this.parseResume(id, payload.resumeText);
     }
@@ -85,6 +95,10 @@ export class InterviewsService {
     session.status = 'COMPLETED';
     session.currentStage = 'COMPLETED';
     session.completedAt = new Date().toISOString();
+
+    // Auto-evaluate session evidence on end
+    this.evaluateSession(id);
+
     return session;
   }
 
@@ -115,7 +129,7 @@ export class InterviewsService {
     jobProfile?: JobProfile;
     match?: CandidateJobProfile;
   } {
-    this.getSession(sessionId); // Validates existence
+    this.getSession(sessionId);
     return {
       candidateProfile: this.candidateProfiles.get(sessionId),
       jobProfile: this.jobProfiles.get(sessionId),
@@ -134,6 +148,65 @@ export class InterviewsService {
     this.precomputedContexts.set(sessionId, turnContext);
 
     return { match, turnContext };
+  }
+
+  evaluateSession(sessionId: string): InterviewEvaluation {
+    const session = this.getSession(sessionId);
+    const candidateProfile = this.candidateProfiles.get(sessionId);
+    const jobProfile = this.jobProfiles.get(sessionId);
+    let transcript = this.transcripts.get(sessionId) || [];
+
+    if (transcript.length === 0) {
+      // Mock sample turns if evaluation requested on synthetic session
+      transcript = [
+        { id: 't1', speaker: 'ai', text: 'Could you give an overview of your backend project?', timestamp: new Date().toISOString() },
+        { id: 't2', speaker: 'candidate', text: 'I built microservices using Spring Boot, PostgreSQL indexing, and Redis caching for scalability.', timestamp: new Date().toISOString() },
+      ];
+      this.transcripts.set(sessionId, transcript);
+    }
+
+    const evaluation = this.evaluator.evaluateInterview({
+      interviewId: session.id,
+      transcript,
+      candidateProfile,
+      jobProfile,
+    });
+
+    this.evaluations.set(sessionId, evaluation);
+    return evaluation;
+  }
+
+  getEvaluation(sessionId: string): InterviewEvaluation {
+    this.getSession(sessionId);
+    let evaluation = this.evaluations.get(sessionId);
+    if (!evaluation) {
+      evaluation = this.evaluateSession(sessionId);
+    }
+    return evaluation;
+  }
+
+  submitHumanReview(
+    sessionId: string,
+    payload: {
+      reviewerId: string;
+      reviewerName: string;
+      humanOverrides: Record<string, HumanReviewOverride>;
+      overallDecisionNote?: string;
+    }
+  ): { evaluation: InterviewEvaluation; review: HumanReview } {
+    const initialEval = this.getEvaluation(sessionId);
+    const review = this.humanReviewService.createReview({
+      evaluationId: initialEval.evaluationId,
+      reviewerId: payload.reviewerId,
+      reviewerName: payload.reviewerName,
+      humanOverrides: payload.humanOverrides,
+      overallDecisionNote: payload.overallDecisionNote,
+    });
+
+    const updatedEval = this.humanReviewService.applyHumanReview(initialEval, review);
+    this.evaluations.set(sessionId, updatedEval);
+
+    return { evaluation: updatedEval, review };
   }
 
   private recalculateMatch(sessionId: string): CandidateJobProfile {

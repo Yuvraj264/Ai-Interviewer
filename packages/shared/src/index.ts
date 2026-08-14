@@ -249,6 +249,80 @@ export interface CandidateJobProfile {
   interviewTargets: InterviewTarget[];
 }
 
+// Phase 8 Evaluation Types
+export type EvidenceType = 'DIRECT' | 'INDIRECT' | 'WEAK' | 'CONTRADICTORY';
+export type RequirementCoverageStatus =
+  | 'NOT_TESTED'
+  | 'PARTIALLY_TESTED'
+  | 'SUPPORTED'
+  | 'STRONGLY_SUPPORTED'
+  | 'CONTRADICTORY';
+export type EvaluationStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'NEEDS_REVIEW';
+
+export interface EvaluationEvidence {
+  id: string;
+  questionId: string;
+  answerId: string;
+  dimensionId: string;
+  evidenceType: EvidenceType;
+  summary: string;
+  transcriptReference?: string;
+  confidence: number;
+}
+
+export interface EvaluationDimension {
+  dimensionId: string;
+  name: string;
+  description: string;
+  weight: number;
+  required: boolean;
+  score?: number; // 1-5 integer or null if INSUFFICIENT_EVIDENCE
+  status: 'EVALUATED' | 'INSUFFICIENT_EVIDENCE';
+  confidence: number;
+  evidence: EvaluationEvidence[];
+  limitations: string[];
+}
+
+export interface RequirementEvaluation {
+  skillOrRequirement: string;
+  status: RequirementCoverageStatus;
+  evidenceSummary: string;
+  supportingQuestions: string[];
+  confidence: number;
+}
+
+export interface InterviewEvaluation {
+  evaluationId: string;
+  interviewId: string;
+  status: EvaluationStatus;
+  evaluatedDimensions: EvaluationDimension[];
+  requirementEvaluations: RequirementEvaluation[];
+  evaluationCoverage: {
+    totalDimensions: number;
+    evaluatedDimensionsCount: number;
+    isComplete: boolean;
+  };
+  rubricVersion: string;
+  promptVersion: string;
+  modelVersion: string;
+  timestamp: string;
+}
+
+export interface HumanReviewOverride {
+  score: number;
+  note: string;
+}
+
+export interface HumanReview {
+  reviewId: string;
+  evaluationId: string;
+  reviewerId: string;
+  reviewerName: string;
+  humanOverrides: Record<string, HumanReviewOverride>;
+  overallDecisionNote?: string;
+  timestamp: string;
+}
+
 export interface TranscriptItem {
   id: string;
   speaker: 'ai' | 'candidate';
@@ -281,4 +355,4 @@ export interface ApiResponse<T = unknown> {
   timestamp: string;
 }
 
-export const PROJECT_PHASE = 'Phase 7 — Resume + Job Description Intelligence' as const;
+export const PROJECT_PHASE = 'Phase 8 — Evidence-Based Interview Evaluation' as const;

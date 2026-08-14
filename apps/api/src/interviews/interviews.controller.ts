@@ -5,6 +5,9 @@ import {
   CandidateProfile,
   JobProfile,
   CandidateJobProfile,
+  InterviewEvaluation,
+  HumanReview,
+  HumanReviewOverride,
 } from '@ai-interviewer/shared';
 import { BoundedInterviewContext } from '@ai-interviewer/interview-engine';
 import { InterviewsService } from './interviews.service';
@@ -112,6 +115,45 @@ export class InterviewsController {
     return {
       success: true,
       data: preparedData,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  @Post(':id/evaluate')
+  evaluateSession(@Param('id') id: string): ApiResponse<InterviewEvaluation> {
+    const evaluation = this.interviewsService.evaluateSession(id);
+    return {
+      success: true,
+      data: evaluation,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  @Get(':id/evaluation')
+  getEvaluation(@Param('id') id: string): ApiResponse<InterviewEvaluation> {
+    const evaluation = this.interviewsService.getEvaluation(id);
+    return {
+      success: true,
+      data: evaluation,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  @Post(':id/evaluation/review')
+  submitHumanReview(
+    @Param('id') id: string,
+    @Body()
+    body: {
+      reviewerId: string;
+      reviewerName: string;
+      humanOverrides: Record<string, HumanReviewOverride>;
+      overallDecisionNote?: string;
+    }
+  ): ApiResponse<{ evaluation: InterviewEvaluation; review: HumanReview }> {
+    const result = this.interviewsService.submitHumanReview(id, body);
+    return {
+      success: true,
+      data: result,
       timestamp: new Date().toISOString(),
     };
   }

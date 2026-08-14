@@ -187,6 +187,67 @@ interface CandidateJobProfile {
     relevantProjects: CandidateProject[];
     interviewTargets: InterviewTarget[];
 }
+type EvidenceType = 'DIRECT' | 'INDIRECT' | 'WEAK' | 'CONTRADICTORY';
+type RequirementCoverageStatus = 'NOT_TESTED' | 'PARTIALLY_TESTED' | 'SUPPORTED' | 'STRONGLY_SUPPORTED' | 'CONTRADICTORY';
+type EvaluationStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'NEEDS_REVIEW';
+interface EvaluationEvidence {
+    id: string;
+    questionId: string;
+    answerId: string;
+    dimensionId: string;
+    evidenceType: EvidenceType;
+    summary: string;
+    transcriptReference?: string;
+    confidence: number;
+}
+interface EvaluationDimension {
+    dimensionId: string;
+    name: string;
+    description: string;
+    weight: number;
+    required: boolean;
+    score?: number;
+    status: 'EVALUATED' | 'INSUFFICIENT_EVIDENCE';
+    confidence: number;
+    evidence: EvaluationEvidence[];
+    limitations: string[];
+}
+interface RequirementEvaluation {
+    skillOrRequirement: string;
+    status: RequirementCoverageStatus;
+    evidenceSummary: string;
+    supportingQuestions: string[];
+    confidence: number;
+}
+interface InterviewEvaluation {
+    evaluationId: string;
+    interviewId: string;
+    status: EvaluationStatus;
+    evaluatedDimensions: EvaluationDimension[];
+    requirementEvaluations: RequirementEvaluation[];
+    evaluationCoverage: {
+        totalDimensions: number;
+        evaluatedDimensionsCount: number;
+        isComplete: boolean;
+    };
+    rubricVersion: string;
+    promptVersion: string;
+    modelVersion: string;
+    timestamp: string;
+}
+interface HumanReviewOverride {
+    score: number;
+    note: string;
+}
+interface HumanReview {
+    reviewId: string;
+    evaluationId: string;
+    reviewerId: string;
+    reviewerName: string;
+    humanOverrides: Record<string, HumanReviewOverride>;
+    overallDecisionNote?: string;
+    timestamp: string;
+}
 interface TranscriptItem {
     id: string;
     speaker: 'ai' | 'candidate';
@@ -215,6 +276,6 @@ interface ApiResponse<T = unknown> {
     };
     timestamp: string;
 }
-declare const PROJECT_PHASE: "Phase 7 \u2014 Resume + Job Description Intelligence";
+declare const PROJECT_PHASE: "Phase 8 \u2014 Evidence-Based Interview Evaluation";
 
-export { type AdaptiveAction, type AdaptiveDecision, type AdaptiveDecisionRecord, type AiConversationState, type AnswerAnalysis, type ApiResponse, type CandidateExperience, type CandidateJobProfile, type CandidateProfile, type CandidateProject, type CandidateSkill, type CreateSessionDto, type DocumentProcessingStatus, type EngineEventType, type EngineQuestion, type EngineQuestionState, type EvidenceItem, type InterviewConfig, type InterviewEngineState, type InterviewSession, type InterviewStage, type InterviewTarget, type InterviewType, type JobProfile, type MicrophoneState, PROJECT_PHASE, type QualityCategory, type RealtimeConnectionState, type RealtimeTokenResponse, type SessionStatus, type SkillRequirement, type SystemHealth, type TargetStatus, type TargetType, type TranscriptItem, type VerificationStatus, createSessionSchema };
+export { type AdaptiveAction, type AdaptiveDecision, type AdaptiveDecisionRecord, type AiConversationState, type AnswerAnalysis, type ApiResponse, type CandidateExperience, type CandidateJobProfile, type CandidateProfile, type CandidateProject, type CandidateSkill, type CreateSessionDto, type DocumentProcessingStatus, type EngineEventType, type EngineQuestion, type EngineQuestionState, type EvaluationDimension, type EvaluationEvidence, type EvaluationStatus, type EvidenceItem, type EvidenceType, type HumanReview, type HumanReviewOverride, type InterviewConfig, type InterviewEngineState, type InterviewEvaluation, type InterviewSession, type InterviewStage, type InterviewTarget, type InterviewType, type JobProfile, type MicrophoneState, PROJECT_PHASE, type QualityCategory, type RealtimeConnectionState, type RealtimeTokenResponse, type RequirementCoverageStatus, type RequirementEvaluation, type SessionStatus, type SkillRequirement, type SystemHealth, type TargetStatus, type TargetType, type TranscriptItem, type VerificationStatus, createSessionSchema };

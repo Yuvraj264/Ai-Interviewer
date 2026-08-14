@@ -77,20 +77,34 @@ The AI Interviewer platform is a production-oriented system for conducting real-
    - `InterviewContextBuilder`: Precomputes bounded context slices per turn based on active target and candidate evidence without overflowing LLM context budget.
 2. **REST API Service Integration (`apps/api`)**:
    - Exposed `POST /interviews/:id/resume`, `POST /interviews/:id/jd`, `GET /interviews/:id/profile`, and `POST /interviews/:id/prepare`.
-3. **Document Security & Context Architecture**:
-   - Raw resume/JD documents are **NEVER put directly into the realtime model context on every turn**.
-   - Parsers treat document content as untrusted data (`RESUME_PARSER_V1` & `JD_PARSER_V1`).
+
+---
+
+## Phase 8 Implementation Record
+
+### What Was Built
+1. **Evidence-Based Interview Evaluation Subsystem (`packages/interview-engine/src/evaluation`)**:
+   - `EvaluationRubric`: Configurable evaluation rubrics per engineering role (`BACKEND_ENGINEER_RUBRIC_V1`).
+   - `EvidenceEvaluator`: Versioned evaluation engine (`EVALUATION_ENGINE_V1` & `EVALUATION_PROMPT_V1`) analyzing transcript evidence against rubric dimensions.
+   - **NO EVIDENCE = NO SCORE**: Un-tested competencies receive `score: undefined` and `status: 'INSUFFICIENT_EVIDENCE'`.
+   - **Evidence Traceability**: Every non-null 1–5 score maps directly back to transcript question/answer IDs.
+   - **Requirement Coverage Mapping**: Maps job requirements to `SUPPORTED`, `STRONGLY_SUPPORTED`, `PARTIALLY_TESTED`, `NOT_TESTED`, or `CONTRADICTORY`.
+   - `HumanReviewService`: Supports human reviewer overrides and notes without mutating historical AI evidence. Preserves audit trail (`reviewerId`, `timestamp`, `previousValue`, `newValue`, `note`).
+2. **REST API Integration (`apps/api`)**:
+   - Exposed `POST /interviews/:id/evaluate`, `GET /interviews/:id/evaluation`, and `POST /interviews/:id/evaluation/review`.
+3. **Web Review UI (`apps/web`)**:
+   - Built `EvaluationReviewView` component integrated into candidate `CompletionScreen` with reviewer sign-off controls.
 
 ### Testing & Verification
-- Unit test suite (`intelligence.test.ts`) covering skill normalization, resume parsing, JD parsing, candidate-job matching, target generation, context budget bounds, and multi-candidate/multi-job isolation.
+- Unit test suite (`evaluation.test.ts`) covering 1–5 score scale, `NO EVIDENCE = NO SCORE`, contradictory evidence detection, evidence traceability, prompt injection defense, name/location/school prestige neutrality, and human review override audit trails.
 - Full workspace verification: `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm build`.
 
-### Known Limitations
-Phase 7 establishes candidate/job intelligence and context building. It explicitly does **NOT** contain:
-- Final candidate scoring or hiring recommendations
-- Recruiter evaluation report generator
-- Behavioral personality scoring
-- Cheating detection
+### Known Limitations & Safeguards
+Explicitly enforced:
+- **No autonomous hiring decision** (`HIRE`/`REJECT`/`AUTO-REJECT` forbidden).
+- **No automatic candidate rejection** or automatic candidate ranking.
+- **No protected-characteristic inference** (race, gender, age, religion, family status, nationality excluded).
+- **No emotion scoring or accent/voice scoring**.
 
 ### Next Phase
-**Phase 8 — Interview Evaluation & Evidence-Based Scoring**
+**Phase 9 — Recruiter Dashboard & Interview Analytics**

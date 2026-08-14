@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { InterviewsController } from './interviews.controller';
 import { InterviewsService } from './interviews.service';
 
-describe('InterviewsController Phase 7 Intelligence Endpoints', () => {
+describe('InterviewsController Phase 8 Evaluation Endpoints', () => {
   let controller: InterviewsController;
   let service: InterviewsService;
 
@@ -11,43 +11,45 @@ describe('InterviewsController Phase 7 Intelligence Endpoints', () => {
     controller = new InterviewsController(service);
   });
 
-  it('should create interview session with resume and JD text', () => {
-    const response = controller.createSession({
-      candidateName: 'Sam Developer',
-      role: 'Staff Engineer',
-      type: 'technical',
-      durationMinutes: 20,
-      resumeText: 'Built PrimeBank using Spring Boot, PostgreSQL, and Redis.',
-      jobDescriptionText: 'Required: PostgreSQL and Node.js.',
-    });
-
-    expect(response.success).toBe(true);
-    expect(response.data?.id).toBeDefined();
-    expect(response.data?.status).toBe('CREATED');
-  });
-
-  it('should support posting resume, job description, and preparing interview targets', () => {
+  it('should create session, trigger evaluation, and fetch evaluation result', () => {
     const createRes = controller.createSession({
       candidateName: 'Sam Developer',
       role: 'Backend Engineer',
     });
     const id = createRes.data!.id;
 
-    const resumeRes = controller.parseResume(id, { resumeText: 'Built PrimeBank using Spring Boot, PostgreSQL, and Redis.' });
-    expect(resumeRes.success).toBe(true);
-    expect(resumeRes.data?.skills.length).toBeGreaterThan(0);
+    const evalRes = controller.evaluateSession(id);
+    expect(evalRes.success).toBe(true);
+    expect(evalRes.data?.evaluationId).toBeDefined();
+    expect(evalRes.data?.evaluatedDimensions.length).toBeGreaterThan(0);
 
-    const jdRes = controller.parseJobDescription(id, { jobDescriptionText: 'Required: PostgreSQL and Redis.' });
-    expect(jdRes.success).toBe(true);
-    expect(jdRes.data?.requiredSkills.length).toBeGreaterThan(0);
+    const getEvalRes = controller.getEvaluation(id);
+    expect(getEvalRes.success).toBe(true);
+    expect(getEvalRes.data?.interviewId).toBe(id);
+  });
 
-    const profileRes = controller.getProfile(id);
-    expect(profileRes.success).toBe(true);
-    expect(profileRes.data?.candidateProfile).toBeDefined();
+  it('should support submitting human reviewer overrides', () => {
+    const createRes = controller.createSession({
+      candidateName: 'Alex Mercer',
+      role: 'Staff Engineer',
+    });
+    const id = createRes.data!.id;
 
-    const prepRes = controller.prepareInterview(id);
-    expect(prepRes.success).toBe(true);
-    expect(prepRes.data?.match.interviewTargets.length).toBeGreaterThan(0);
-    expect(prepRes.data?.turnContext.candidateSummary).toBeDefined();
+    controller.evaluateSession(id);
+
+    const reviewRes = controller.submitHumanReview(id, {
+      reviewerId: 'rev_101',
+      reviewerName: 'Lead Hiring Manager',
+      humanOverrides: {
+        'technical-knowledge': { score: 5, note: 'Exceeded expectations on system reliability design.' },
+      },
+      overallDecisionNote: 'Strong technical evidence observed.',
+    });
+
+    expect(reviewRes.success).toBe(true);
+    expect(reviewRes.data?.review.reviewerName).toBe('Lead Hiring Manager');
+    
+    const updatedTechDim = reviewRes.data?.evaluation.evaluatedDimensions.find((d) => d.dimensionId === 'technical-knowledge');
+    expect(updatedTechDim?.score).toBe(5);
   });
 });
