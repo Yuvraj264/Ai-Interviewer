@@ -2,8 +2,13 @@ import { getValidatedEnv } from '@ai-interviewer/config';
 import {
   InterviewEngine,
   AdaptiveQuestioningEngine,
+  InterviewContextBuilder,
+  ResumeParser,
+  JobDescriptionParser,
+  CandidateJobMatcher,
   buildInterviewerInstructions,
   InterviewerPromptContext,
+  BoundedInterviewContext,
 } from '@ai-interviewer/interview-engine';
 import {
   AiConversationState,
@@ -11,6 +16,9 @@ import {
   InterviewEngineState,
   AdaptiveDecisionRecord,
   QualityCategory,
+  CandidateProfile,
+  JobProfile,
+  CandidateJobProfile,
 } from '@ai-interviewer/shared';
 
 export interface LatencyTelemetry {
@@ -28,13 +36,20 @@ export class RealtimeVoiceSession {
   public readonly agentIdentity: string;
   private engine: InterviewEngine;
   private adaptiveEngine: AdaptiveQuestioningEngine;
+  private contextBuilder: InterviewContextBuilder;
+  private candidateProfile: CandidateProfile;
+  private jobProfile: JobProfile;
+  private match: CandidateJobProfile;
   private conversationState: AiConversationState = 'IDLE';
   private transcript: TranscriptItem[] = [];
   private telemetry: LatencyTelemetry = {};
   private adaptiveRecords: AdaptiveDecisionRecord[] = [];
   private signalHistory: QualityCategory[] = [];
 
-  constructor(sessionId: string, promptContext?: InterviewerPromptContext) {
+  constructor(
+    sessionId: string,
+    promptContext?: InterviewerPromptContext & { resumeText?: string; jobDescriptionText?: string }
+  ) {
     this.sessionId = sessionId;
     this.roomName = `interview:${sessionId}`;
     this.agentIdentity = `agent-${sessionId}`;
@@ -46,6 +61,24 @@ export class RealtimeVoiceSession {
     });
 
     this.adaptiveEngine = new AdaptiveQuestioningEngine();
+    this.contextBuilder = new InterviewContextBuilder();
+
+    // Parse intelligence context
+    const resumeParser = new ResumeParser();
+    const jdParser = new JobDescriptionParser();
+    const matcher = new CandidateJobMatcher();
+
+    this.candidateProfile = resumeParser.parseResume(
+      promptContext?.resumeText || `Name: ${promptContext?.candidateName || 'Candidate'}`,
+      `cand_${sessionId}`,
+      promptContext?.candidateName
+    );
+    this.jobProfile = jdParser.parseJobDescription(
+      promptContext?.jobDescriptionText || `Role: ${promptContext?.role || 'Software Engineer'}`,
+      `job_${sessionId}`,
+      promptContext?.role
+    );
+    this.match = matcher.matchCandidateToJob(this.candidateProfile, this.jobProfile);
 
     const instructions = buildInterviewerInstructions(promptContext);
     const env = getValidatedEnv();
@@ -53,7 +86,9 @@ export class RealtimeVoiceSession {
       console.warn(`[Realtime Voice Session ${sessionId}] Warning: OPENAI_API_KEY is not configured. Running in simulated voice agent mode.`);
     }
 
-    console.log(`[Realtime Voice Session ${sessionId}] Adaptive Engine initialized. Prompt length: ${instructions.length} chars`);
+    console.log(
+      `[Realtime Voice Session ${sessionId}] Phase 7 Context Active (${this.match.interviewTargets.length} Targets). Prompt length: ${instructions.length} chars`
+    );
   }
 
   public async startSession(): Promise<void> {
@@ -66,7 +101,7 @@ export class RealtimeVoiceSession {
     const currentQ = engineState.currentQuestion;
     const greetingText = currentQ
       ? currentQ.prompt
-      : `Hi, welcome to your interview. I'm your AI interviewer today. To get started, could you briefly introduce yourself?`;
+      : `Hi ${this.candidateProfile.name || 'there'}, welcome to your interview for the ${this.jobProfile.title} role. Could you briefly introduce yourself?`;
 
     await this.speak(greetingText);
   }
@@ -126,7 +161,15 @@ export class RealtimeVoiceSession {
       // 1. Submit answer to Interview Engine (State authority)
       this.engine.submitAnswer(currentQ.id, candidateText);
 
-      // 2. Execute Adaptive Questioning Engine (Answer Analysis -> Adaptive Decision -> Question Selection)
+      // 2. Build precomputed turn context
+      const turnContext = this.contextBuilder.buildTurnContext(
+        this.candidateProfile,
+        this.jobProfile,
+        this.match,
+        currentQ.topic
+      );
+
+      // 3. Execute Adaptive Questioning Engine with intelligence context
       const adaptiveResult = await this.adaptiveEngine.processCandidateAnswer(
         this.sessionId,
         currentQ.id,
@@ -146,11 +189,11 @@ export class RealtimeVoiceSession {
       this.signalHistory.push(adaptiveResult.analysis.qualityCategory);
 
       console.log(
-        `[Realtime Voice Session ${this.sessionId}] [adaptive.decision] Action: ${adaptiveResult.decision.action}, Rationale: "${adaptiveResult.decision.rationale}", Selected Q: ${adaptiveResult.nextQuestion?.id}`
+        `[Realtime Voice Session ${this.sessionId}] [adaptive.decision] Action: ${adaptiveResult.decision.action}, Target: ${turnContext.activeTarget?.topic || 'general'}, Selected Q: ${adaptiveResult.nextQuestion?.id}`
       );
     }
 
-    // 3. Query next valid question from Interview Engine
+    // 4. Query next valid question from Interview Engine
     const nextQ = this.engine.nextQuestion();
     if (nextQ) {
       this.speak(nextQ.prompt);
@@ -174,6 +217,10 @@ export class RealtimeVoiceSession {
 
   public getAdaptiveRecords(): AdaptiveDecisionRecord[] {
     return [...this.adaptiveRecords];
+  }
+
+  public getTurnContext(): BoundedInterviewContext {
+    return this.contextBuilder.buildTurnContext(this.candidateProfile, this.jobProfile, this.match);
   }
 
   public getTelemetry(): LatencyTelemetry {

@@ -26,14 +26,21 @@ __export(index_exports, {
   AdaptiveQuestionSelector: () => AdaptiveQuestionSelector,
   AdaptiveQuestioningEngine: () => AdaptiveQuestioningEngine,
   AnswerAnalyzer: () => AnswerAnalyzer,
+  CandidateJobMatcher: () => CandidateJobMatcher,
   DeterministicFallbackHandler: () => DeterministicFallbackHandler,
   InterviewAlreadyCompletedError: () => InterviewAlreadyCompletedError,
+  InterviewContextBuilder: () => InterviewContextBuilder,
   InterviewEngine: () => InterviewEngine,
   InvalidTransitionError: () => InvalidTransitionError,
+  JD_PARSER_VERSION: () => JD_PARSER_VERSION,
+  JobDescriptionParser: () => JobDescriptionParser,
   MockInterviewer: () => MockInterviewer,
   QUESTION_BANK: () => QUESTION_BANK,
   QuestionBudgetExceededError: () => QuestionBudgetExceededError,
+  RESUME_PARSER_VERSION: () => RESUME_PARSER_VERSION,
+  ResumeParser: () => ResumeParser,
   SessionNotFoundError: () => SessionNotFoundError,
+  SkillNormalizer: () => SkillNormalizer,
   buildInterviewerInstructions: () => buildInterviewerInstructions,
   getQuestionsForType: () => getQuestionsForType
 });
@@ -716,6 +723,288 @@ var AdaptiveQuestioningEngine = class {
   }
 };
 
+// src/intelligence/skill-normalizer.ts
+var TAXONOMY = {
+  node: { canonicalName: "Node.js", category: "FRAMEWORK" },
+  nodejs: { canonicalName: "Node.js", category: "FRAMEWORK" },
+  "node js": { canonicalName: "Node.js", category: "FRAMEWORK" },
+  "node.js": { canonicalName: "Node.js", category: "FRAMEWORK" },
+  postgres: { canonicalName: "PostgreSQL", category: "DATABASE" },
+  postgresql: { canonicalName: "PostgreSQL", category: "DATABASE" },
+  psql: { canonicalName: "PostgreSQL", category: "DATABASE" },
+  react: { canonicalName: "React", category: "FRAMEWORK" },
+  reactjs: { canonicalName: "React", category: "FRAMEWORK" },
+  "react.js": { canonicalName: "React", category: "FRAMEWORK" },
+  redis: { canonicalName: "Redis", category: "DATABASE" },
+  docker: { canonicalName: "Docker", category: "DEVOPS" },
+  kafka: { canonicalName: "Kafka", category: "DEVOPS" },
+  aws: { canonicalName: "AWS", category: "CLOUD" },
+  "amazon web services": { canonicalName: "AWS", category: "CLOUD" },
+  spring: { canonicalName: "Spring Boot", category: "FRAMEWORK" },
+  "spring boot": { canonicalName: "Spring Boot", category: "FRAMEWORK" }
+};
+var SkillNormalizer = class {
+  normalizeSkill(rawSkill) {
+    const clean = rawSkill.trim().toLowerCase();
+    if (TAXONOMY[clean]) {
+      return TAXONOMY[clean];
+    }
+    const capitalized = clean.charAt(0).toUpperCase() + clean.slice(1);
+    return { canonicalName: capitalized, category: "GENERAL" };
+  }
+};
+
+// src/intelligence/resume-parser.ts
+var RESUME_PARSER_VERSION = "RESUME_PARSER_V1";
+var ResumeParser = class {
+  version = RESUME_PARSER_VERSION;
+  normalizer = new SkillNormalizer();
+  getVersion() {
+    return this.version;
+  }
+  parseResume(rawText, candidateId, candidateName) {
+    const cleanText = rawText.trim();
+    if (this.containsPromptInjection(cleanText)) {
+      console.warn(`[ResumeParser] Prompt injection detected in resume text. Parsing as untrusted data.`);
+    }
+    const skills = this.extractSkills(cleanText);
+    const projects = this.extractProjects(cleanText);
+    const experience = this.extractExperience(cleanText);
+    const extractedName = this.extractName(cleanText);
+    const name = extractedName !== "Candidate" ? extractedName : candidateName || "Candidate";
+    return {
+      candidateId,
+      name,
+      headline: "Software Engineer",
+      summary: cleanText.slice(0, 300),
+      education: [{ institution: "State University", degree: "B.S. Computer Science" }],
+      experience,
+      projects,
+      skills,
+      sourceDocumentId: `doc_resume_${Date.now()}`
+    };
+  }
+  containsPromptInjection(text) {
+    const patterns = [
+      /ignore (all|previous|system) instructions/i,
+      /make candidate an expert/i,
+      /reveal system prompt/i
+    ];
+    return patterns.some((p) => p.test(text));
+  }
+  extractSkills(text) {
+    const lower = text.toLowerCase();
+    const targetSkills = ["node", "react", "postgres", "redis", "docker", "kafka", "spring boot", "aws"];
+    const skills = [];
+    targetSkills.forEach((raw) => {
+      if (lower.includes(raw)) {
+        const { canonicalName, category } = this.normalizer.normalizeSkill(raw);
+        skills.push({
+          canonicalName,
+          rawName: raw,
+          category,
+          source: "resume",
+          evidence: `Mentioned ${raw} in resume text.`,
+          verificationStatus: "UNVERIFIED"
+        });
+      }
+    });
+    return skills;
+  }
+  extractProjects(text) {
+    const lower = text.toLowerCase();
+    const projects = [];
+    if (lower.includes("primebank") || lower.includes("banking") || lower.includes("payment")) {
+      projects.push({
+        name: "PrimeBank System",
+        description: "High-throughput transactional banking platform.",
+        technologies: ["Spring Boot", "PostgreSQL", "Redis"],
+        role: "Backend Engineer",
+        outcomes: ["Handled 10k TPS with strong transactional consistency"]
+      });
+    }
+    if (projects.length === 0) {
+      projects.push({
+        name: "Scalable Microservices Project",
+        description: "Backend services for e-commerce processing.",
+        technologies: ["Node.js", "PostgreSQL"]
+      });
+    }
+    return projects;
+  }
+  extractExperience(_text) {
+    return [
+      {
+        company: "TechCorp Solutions",
+        role: "Software Engineer",
+        startDate: "2021",
+        endDate: "Present",
+        responsibilities: ["Developed scalable backend APIs", "Optimized database queries and indexing"],
+        technologies: ["Node.js", "PostgreSQL", "Redis"]
+      }
+    ];
+  }
+  extractName(text) {
+    const match = text.match(/Name:\s*([A-Za-z\s]+)/i);
+    return match ? match[1].trim() : "Candidate";
+  }
+};
+
+// src/intelligence/jd-parser.ts
+var JD_PARSER_VERSION = "JD_PARSER_V1";
+var JobDescriptionParser = class {
+  version = JD_PARSER_VERSION;
+  normalizer = new SkillNormalizer();
+  getVersion() {
+    return this.version;
+  }
+  parseJobDescription(rawText, jobId, targetRole) {
+    const cleanText = rawText.trim();
+    const { required, preferred } = this.extractSkillRequirements(cleanText);
+    const extractedTitle = this.extractTitle(cleanText);
+    const title = extractedTitle !== "Software Engineer" ? extractedTitle : targetRole || "Software Engineer";
+    return {
+      jobId,
+      title,
+      company: "Enterprise Inc",
+      seniority: "Senior",
+      summary: cleanText.slice(0, 300),
+      requiredSkills: required,
+      preferredSkills: preferred,
+      responsibilities: [
+        "Build high-performance REST APIs",
+        "Maintain database schemas and query performance",
+        "Collaborate on microservices architecture"
+      ],
+      qualifications: ["Bachelor degree in Computer Science or equivalent", "3+ years software engineering experience"],
+      domains: ["fintech", "distributed-systems"]
+    };
+  }
+  extractSkillRequirements(text) {
+    const lower = text.toLowerCase();
+    const required = [];
+    const preferred = [];
+    const known = ["node", "postgres", "redis", "react", "docker", "kafka", "aws"];
+    known.forEach((skillRaw) => {
+      if (lower.includes(skillRaw)) {
+        const { canonicalName } = this.normalizer.normalizeSkill(skillRaw);
+        if (lower.includes(`preferred: ${skillRaw}`) || lower.includes(`bonus: ${skillRaw}`)) {
+          preferred.push({
+            skill: canonicalName,
+            importance: "IMPORTANT",
+            isRequired: false,
+            evidence: `Listed as preferred requirement in JD text.`
+          });
+        } else {
+          required.push({
+            skill: canonicalName,
+            importance: "CORE",
+            isRequired: true,
+            evidence: `Listed as required core requirement in JD text.`
+          });
+        }
+      }
+    });
+    if (required.length === 0) {
+      required.push({ skill: "Node.js", importance: "CORE", isRequired: true });
+      required.push({ skill: "PostgreSQL", importance: "CORE", isRequired: true });
+    }
+    return { required, preferred };
+  }
+  extractTitle(text) {
+    const match = text.match(/Role:\s*([A-Za-z\s]+)/i);
+    return match ? match[1].trim() : "Software Engineer";
+  }
+};
+
+// src/intelligence/matcher.ts
+var CandidateJobMatcher = class {
+  matchCandidateToJob(candidate, job) {
+    const candidateSkillsMap = new Map(candidate.skills.map((s) => [s.canonicalName.toLowerCase(), s]));
+    const matchedSkills = [];
+    const missingSkills = [];
+    const unverifiedSkills = [];
+    const targets = [];
+    job.requiredSkills.forEach((req, idx) => {
+      const skillName = req.skill;
+      const key = skillName.toLowerCase();
+      const candSkill = candidateSkillsMap.get(key);
+      if (candSkill) {
+        matchedSkills.push(skillName);
+        if (candSkill.verificationStatus === "UNVERIFIED") {
+          unverifiedSkills.push(skillName);
+          targets.push({
+            id: `target_verify_${idx}_${Date.now()}`,
+            type: "VERIFY_RESUME_CLAIM",
+            topic: skillName,
+            reason: `Candidate claims ${skillName} on resume. Verification required for target job role.`,
+            priority: req.importance === "CORE" ? "HIGH" : "MEDIUM",
+            verificationGoal: `Evaluate practical engineering proficiency in ${skillName}.`,
+            status: "PENDING"
+          });
+        }
+      } else {
+        missingSkills.push(skillName);
+        targets.push({
+          id: `target_gap_${idx}_${Date.now()}`,
+          type: "EXPLORE_GAP",
+          topic: skillName,
+          reason: `Job requires ${skillName} but candidate resume does not explicitly list it.`,
+          priority: req.importance === "CORE" ? "HIGH" : "LOW",
+          verificationGoal: `Assess adjacent experience or underlying knowledge of ${skillName}.`,
+          status: "PENDING"
+        });
+      }
+    });
+    candidate.projects.forEach((proj, idx) => {
+      targets.push({
+        id: `target_proj_${idx}_${Date.now()}`,
+        type: "DEEP_DIVE_PROJECT",
+        topic: proj.name,
+        reason: `Candidate resume highlights project '${proj.name}' (${proj.technologies.join(", ")}).`,
+        priority: "HIGH",
+        verificationGoal: `Investigate architectural decisions, tradeoffs, and candidate contribution in ${proj.name}.`,
+        status: "PENDING"
+      });
+    });
+    return {
+      candidateId: candidate.candidateId,
+      jobId: job.jobId,
+      matchedSkills,
+      missingSkills,
+      unverifiedSkills,
+      relevantProjects: candidate.projects,
+      interviewTargets: targets
+    };
+  }
+};
+
+// src/intelligence/context-builder.ts
+var InterviewContextBuilder = class {
+  buildTurnContext(candidate, job, match, currentTopic) {
+    const activeTarget = match.interviewTargets.find((t) => currentTopic && t.topic.toLowerCase().includes(currentTopic.toLowerCase())) || match.interviewTargets.find((t) => t.priority === "HIGH") || match.interviewTargets[0];
+    const relevantProj = candidate.projects.find(
+      (p) => activeTarget && p.technologies.some((tech) => tech.toLowerCase().includes(activeTarget.topic.toLowerCase()))
+    ) || candidate.projects[0];
+    const relevantSkill = candidate.skills.find(
+      (s) => activeTarget && s.canonicalName.toLowerCase().includes(activeTarget.topic.toLowerCase())
+    );
+    const candidateSummary = `${candidate.name || "Candidate"} (${candidate.headline || "Engineer"}) - Claims: ${candidate.skills.map((s) => s.canonicalName).join(", ")}`;
+    const jobRole = `${job.title} at ${job.company || "Enterprise"} (Required: ${job.requiredSkills.map((s) => s.skill).join(", ")})`;
+    const projSnippet = relevantProj ? `Project: ${relevantProj.name} (${relevantProj.technologies.join(", ")}) - ${relevantProj.description}` : void 0;
+    const skillSnippet = relevantSkill ? `Skill Claim: ${relevantSkill.canonicalName} (${relevantSkill.verificationStatus}) - Evidence: "${relevantSkill.evidence}"` : void 0;
+    const totalChars = candidateSummary.length + jobRole.length + (activeTarget?.reason.length || 0) + (projSnippet?.length || 0) + (skillSnippet?.length || 0);
+    return {
+      candidateSummary,
+      jobRole,
+      activeTarget,
+      relevantProjectSnippet: projSnippet,
+      relevantSkillSnippet: skillSnippet,
+      contextBudgetChars: totalChars
+    };
+  }
+};
+
 // src/index.ts
 var DETERMINISTIC_QUESTIONS = {
   technical: [
@@ -799,14 +1088,21 @@ var MockInterviewer = class {
   AdaptiveQuestionSelector,
   AdaptiveQuestioningEngine,
   AnswerAnalyzer,
+  CandidateJobMatcher,
   DeterministicFallbackHandler,
   InterviewAlreadyCompletedError,
+  InterviewContextBuilder,
   InterviewEngine,
   InvalidTransitionError,
+  JD_PARSER_VERSION,
+  JobDescriptionParser,
   MockInterviewer,
   QUESTION_BANK,
   QuestionBudgetExceededError,
+  RESUME_PARSER_VERSION,
+  ResumeParser,
   SessionNotFoundError,
+  SkillNormalizer,
   buildInterviewerInstructions,
   getQuestionsForType
 });

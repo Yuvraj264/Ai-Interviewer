@@ -4,29 +4,26 @@ Production-oriented AI Voice Interviewer platform designed to conduct interactiv
 
 ---
 
-## Current Status: Phase 6 — Adaptive Questioning Engine
+## Current Status: Phase 7 — Resume + Job Description Intelligence
 
-The repository is currently at **Phase 6 (Adaptive Questioning Engine)**. The system features an evidence-grounded adaptive questioning pipeline (`@ai-interviewer/interview-engine/adaptive`) that dynamically analyzes candidate answers for technical depth, missing concepts, and evidence claims to propose adaptive actions (`FOLLOW_UP`, `PROBE`, `CLARIFY`, `INCREASE_DIFFICULTY`, `DECREASE_DIFFICULTY`, `NEW_TOPIC`). **The LLM does NOT directly modify interview state**—all proposals are validated by the deterministic `InterviewEngine` with mandatory fallback guarantees.
+The repository is currently at **Phase 7 (Resume + Job Description Intelligence)**. The system features structured candidate intelligence (`@ai-interviewer/interview-engine/intelligence`) that parses candidate resumes (`ResumeParser`), job descriptions (`JobDescriptionParser`), normalizes technical skills (`SkillNormalizer`), maps candidate-job alignment (`CandidateJobMatcher`), and generates prioritized interview targets (`VERIFY_RESUME_CLAIM`, `DEEP_DIVE_PROJECT`, `TEST_REQUIRED_SKILL`). **Raw resume and JD text are NEVER put directly into the realtime model context on every turn**—precomputed context slices (`InterviewContextBuilder`) are selected per question turn.
 
 ---
 
-## System Architecture (Phase 6)
+## System Architecture (Phase 7)
 
 ```text
-Candidate Speech
-       ↓
-Browser Microphone (WebRTC)
-       ↓
-LiveKit Room ◄───────► Realtime Agent (apps/agent)
-                            │
-                    Adaptive Questioning Engine
-                    (Answer Analysis -> Evidence Extraction -> Adaptive Decision)
-                            │
-                    Interview Engine Validation & Difficulty Bounds Check
-                    (Stages, Question Budget, Difficulty Rules)
-                            │
-                    OpenAI Realtime (gpt-4o-realtime-preview)
-                    (Conversational Voice Phrasing)
+Resume Document (PDF/DOCX/Text) ──► ResumeParser (RESUME_PARSER_V1) ──┐
+                                                                       ├──► CandidateJobMatcher
+Job Description (PDF/DOCX/Text) ──► JD Parser (JD_PARSER_V1) ──────────┘          │
+                                                                                  ▼
+                                                                        Interview Targets & Context
+                                                                                  │
+                                                                                  ▼
+                                                                      InterviewContextBuilder
+                                                                                  │
+                                                                                  ▼
+                                                                        Realtime Voice Agent
 ```
 
 ---
@@ -34,11 +31,15 @@ LiveKit Room ◄───────► Realtime Agent (apps/agent)
 ## API Endpoints
 
 - `GET  /health`: Health monitoring & system phase check
-- `POST /interviews`: Create candidate interview session
+- `POST /interviews`: Create candidate interview session (supports `resumeText` and `jobDescriptionText`)
 - `GET  /interviews/:id`: Retrieve session status (supports session recovery on refresh)
 - `POST /interviews/:id/start`: Transition session status to `IN_PROGRESS`
 - `POST /interviews/:id/end`: Transition session status to `COMPLETED`
 - `POST /interviews/:id/realtime/token`: Issue short-lived LiveKit participant JWT token for room `interview:{sessionId}`
+- `POST /interviews/:id/resume`: Upload & parse candidate resume
+- `POST /interviews/:id/jd`: Upload/paste & parse job description
+- `GET  /interviews/:id/profile`: Retrieve parsed candidate profile, job profile, and match summary
+- `POST /interviews/:id/prepare`: Prepare interview targets and precomputed context snapshot
 
 ---
 
@@ -71,8 +72,8 @@ pnpm build
 
 ---
 
-## What Has NOT Been Implemented Yet (Intentionally Excluded in Phase 6)
+## What Has NOT Been Implemented Yet (Intentionally Excluded in Phase 7)
 
-- Resume & Job Description intelligence (Phase 7)
 - Candidate scoring & recruiter evaluation report (Phase 8)
 - Recruiter analytics dashboard
+- Cheating detection

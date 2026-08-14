@@ -24,74 +24,91 @@
 **Status**: COMPLETED
 
 ### Phase 7 — Resume + Job Description Intelligence
+**Status**: COMPLETED
+
+### Phase 8 — Interview Evaluation & Evidence-Based Scoring
 **Status**: NOT STARTED
 
 ---
 
-## Phase 6 Implementation Log
+## Phase 7 Implementation Log
 
-### Phase 6 Entry Point
+### Phase 7 Entry Point
 ```text
-Phase 5 Interview Engine verified
+Phase 6 Adaptive Questioning verified
        ↓
-Structured interview state machine exists
+Adaptive questioning engine exists
        ↓
-Introduce evidence-grounded adaptive questioning engine
+Introduce Candidate (Resume) + Job (JD) Intelligence & Target Matching
 ```
 
-### Phase 6 Architecture & Workflow
+### Phase 7 Pipelines & Context Architecture
 
+#### 1. Resume Pipeline
 ```text
-Candidate Speech
+Resume Upload / Text
        ↓
-Realtime Agent
+ResumeParser (RESUME_PARSER_V1)
        ↓
-Candidate Answer
+Skill Normalizer (Canonical Aliases)
        ↓
-Answer Analysis (Completeness, Depth, Relevance, Quality Category)
-       ↓
-Evidence Extraction (Grounded Concept Claims, Missing Concepts)
-       ↓
-Adaptive Decision (Action: FOLLOW_UP, PROBE, CLARIFY, INCREASE_DIFFICULTY, NEW_TOPIC)
-       ↓
-Interview Engine Validation & Difficulty Bounds Check
-       ↓
-Question Filtering & Ranking (Topic Cooldowns & Follow-up Limits)
-       ↓
-Selected Question
-       ↓
-Realtime Agent Voice Output
+Candidate Profile (Experience, Projects, UNVERIFIED Skills)
 ```
 
-### Supported Adaptive Actions
-- `FOLLOW_UP`: Candidate gave incomplete answer omitting key concept (e.g. mentioned Redis but omitted cache invalidation).
-- `PROBE`: Candidate gave adequate high-level response; probing for technical depth.
-- `CLARIFY`: Candidate answer transcript was ambiguous or unclear.
-- `INCREASE_DIFFICULTY`: Candidate demonstrated 2 consecutive `STRONG` answers (`EASY` -> `MEDIUM` -> `HARD`).
-- `DECREASE_DIFFICULTY`: Candidate struggled on 2 consecutive `WEAK` answers (`HARD` -> `MEDIUM` -> `EASY`).
-- `NEW_TOPIC`: Current topic sufficiently covered with strong evidence; transitioning to next topic.
+#### 2. JD Pipeline
+```text
+Job Description Upload / Text
+       ↓
+JobDescriptionParser (JD_PARSER_V1)
+       ↓
+Required vs Preferred Skill Extractor
+       ↓
+Job Profile (Core Skills, Responsibilities, Qualifications)
+```
 
-### Mandatory Fallback Strategy
-- Handled Failure Modes: `TIMEOUT`, `RATE_LIMIT`, `INVALID_OUTPUT`, `PROVIDER_ERROR`, `SCHEMA_VALIDATION_ERROR`.
-- Preserves current interview state. Selects next valid question from question bank deterministically without failing candidate session.
+#### 3. Matching & Target Pipeline
+```text
+Candidate Profile + Job Profile
+       ↓
+CandidateJobMatcher
+       ↓
+Matched Skills / Missing Core Skills / Unverified Claims
+       ↓
+Prioritized Interview Targets (VERIFY_RESUME_CLAIM, TEST_REQUIRED_SKILL, DEEP_DIVE_PROJECT)
+```
 
-### Latency Measurement Breakdown
-- `analysisLatencyMs`: Answer transcript analysis & evidence extraction.
-- `decisionLatencyMs`: Adaptive decision generation & rationale mapping.
-- `totalAdaptiveLatencyMs`: Total pipeline latency from candidate turn end to question selection.
+#### 4. Precomputed Context Architecture
+```text
+Candidate Profile + Job Profile + Active Target
+       ↓
+InterviewContextBuilder
+       ↓
+Bounded Turn Context Slice (Candidate Summary, Job Role, Project Snippet, Target)
+       ↓
+Realtime Agent & Adaptive Questioning Engine
+```
 
-### Files Added/Modified in Phase 6
+### Mandatory Rules Verified
+- **Raw documents are NEVER put directly into the realtime model context on every turn.**
+- **Resume claims are stored as `UNVERIFIED` claims** to investigate, not confirmed hiring facts.
+- **Prompt Injection Defense**: Document text is treated as untrusted data (`RESUME_PARSER_V1` and `JD_PARSER_V1`).
+
+### Files Added/Modified in Phase 7
 - `packages/shared/src/index.ts`
 - `packages/shared/src/index.test.ts`
-- `packages/interview-engine/src/adaptive/analyzer.ts`
-- `packages/interview-engine/src/adaptive/decision-maker.ts`
-- `packages/interview-engine/src/adaptive/question-selector.ts`
-- `packages/interview-engine/src/adaptive/fallback-handler.ts`
-- `packages/interview-engine/src/adaptive/adaptive-engine.ts`
-- `packages/interview-engine/src/adaptive/adaptive-engine.test.ts`
+- `packages/interview-engine/src/intelligence/skill-normalizer.ts`
+- `packages/interview-engine/src/intelligence/resume-parser.ts`
+- `packages/interview-engine/src/intelligence/jd-parser.ts`
+- `packages/interview-engine/src/intelligence/matcher.ts`
+- `packages/interview-engine/src/intelligence/context-builder.ts`
+- `packages/interview-engine/src/intelligence/intelligence.test.ts`
 - `packages/interview-engine/src/index.ts`
+- `apps/api/src/interviews/interviews.service.ts`
+- `apps/api/src/interviews/interviews.controller.ts`
+- `apps/api/src/interviews/interviews.controller.spec.ts`
 - `apps/agent/src/realtime-session.ts`
 - `apps/agent/src/index.spec.ts`
+- `apps/web/src/components/SetupForm.tsx`
 - `apps/web/src/components/InterviewShell.tsx`
 - `apps/web/src/app/page.test.tsx`
 - `flow.md`

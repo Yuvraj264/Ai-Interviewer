@@ -1,112 +1,185 @@
 'use client';
 
 import React, { useState } from 'react';
-import { CreateSessionDto, createSessionSchema, InterviewType } from '@ai-interviewer/shared';
+import { createSessionSchema, InterviewType } from '@ai-interviewer/shared';
 
 interface SetupFormProps {
-  onSubmit: (dto: CreateSessionDto) => Promise<void>;
-  isLoading?: boolean;
+  onSubmit: (data: {
+    candidateName: string;
+    role: string;
+    type: InterviewType;
+    durationMinutes: number;
+    resumeText?: string;
+    jobDescriptionText?: string;
+  }) => Promise<void>;
+  isLoading: boolean;
 }
 
-export const SetupForm: React.FC<SetupFormProps> = ({ onSubmit, isLoading = false }) => {
+export const SetupForm: React.FC<SetupFormProps> = ({ onSubmit, isLoading }) => {
   const [candidateName, setCandidateName] = useState('');
-  const [role, setRole] = useState('Software Engineer');
+  const [role, setRole] = useState('Full Stack Engineer');
   const [type, setType] = useState<InterviewType>('technical');
-  const [durationMinutes, setDurationMinutes] = useState<number>(20);
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [durationMinutes, setDurationMinutes] = useState(20);
+  const [resumeText, setResumeText] = useState('');
+  const [jobDescriptionText, setJobDescriptionText] = useState('');
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
 
-    const formData: CreateSessionDto = {
+    const result = createSessionSchema.safeParse({
       candidateName,
       role,
       type,
       durationMinutes,
-    };
+    });
 
-    const parseResult = createSessionSchema.safeParse(formData);
-
-    if (!parseResult.success) {
-      const fieldErrors: Record<string, string> = {};
-      const formatted = parseResult.error.flatten().fieldErrors;
-      Object.entries(formatted).forEach(([key, val]) => {
-        if (val && val.length > 0) fieldErrors[key] = val[0];
+    if (!result.success) {
+      const fieldErrors: { [key: string]: string } = {};
+      result.error.issues.forEach((issue) => {
+        if (issue.path[0]) {
+          fieldErrors[issue.path[0] as string] = issue.message;
+        }
       });
       setErrors(fieldErrors);
       return;
     }
 
-    await onSubmit(parseResult.data);
+    await onSubmit({
+      candidateName,
+      role,
+      type,
+      durationMinutes,
+      resumeText: resumeText.trim() || undefined,
+      jobDescriptionText: jobDescriptionText.trim() || undefined,
+    });
   };
 
   return (
     <div className="card-container">
-      <h2>Interview Setup</h2>
-      <p className="subtitle">Customize your interview parameters before proceeding.</p>
+      <h1 className="title" style={{ fontSize: '24px', marginBottom: '8px' }}>
+        Configure Candidate Interview
+      </h1>
+      <p className="subtitle" style={{ marginBottom: '24px' }}>
+        Set up candidate metadata, target role, resume, and job description.
+      </p>
 
-      <form onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label htmlFor="candidateName">Candidate Name</label>
+      <form onSubmit={handleSubmit} className="setup-form">
+        {/* Candidate Name Input */}
+        <div style={{ textAlign: 'left', marginBottom: '16px' }}>
+          <label htmlFor="candidateName" style={{ display: 'block', marginBottom: '6px', fontWeight: 500, fontSize: '14px' }}>
+            Candidate Full Name *
+          </label>
           <input
             id="candidateName"
             type="text"
-            placeholder="e.g. Alex Johnson"
+            placeholder="e.g. Alex Mercer"
             value={candidateName}
             onChange={(e) => setCandidateName(e.target.value)}
+            disabled={isLoading}
+            style={{ width: '100%' }}
           />
-          {errors.candidateName && <span className="error-text">{errors.candidateName}</span>}
+          {errors.candidateName && (
+            <span style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+              {errors.candidateName}
+            </span>
+          )}
         </div>
 
-        <div className="form-group">
-          <label htmlFor="role">Target Role</label>
+        {/* Target Role Input */}
+        <div style={{ textAlign: 'left', marginBottom: '16px' }}>
+          <label htmlFor="role" style={{ display: 'block', marginBottom: '6px', fontWeight: 500, fontSize: '14px' }}>
+            Target Engineering Role *
+          </label>
           <input
             id="role"
             type="text"
-            placeholder="e.g. Senior Backend Engineer"
+            placeholder="e.g. Senior Full Stack Engineer"
             value={role}
             onChange={(e) => setRole(e.target.value)}
+            disabled={isLoading}
+            style={{ width: '100%' }}
           />
-          {errors.role && <span className="error-text">{errors.role}</span>}
+          {errors.role && (
+            <span style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+              {errors.role}
+            </span>
+          )}
         </div>
 
-        <div className="form-group">
-          <label>Interview Focus</label>
-          <div className="options-grid">
-            {(['technical', 'behavioral', 'mixed'] as InterviewType[]).map((t) => (
-              <button
-                key={t}
-                type="button"
-                className={`option-btn ${type === t ? 'selected' : ''}`}
-                onClick={() => setType(t)}
-              >
-                {t.charAt(0).toUpperCase() + t.slice(1)}
-              </button>
-            ))}
-          </div>
-          {errors.type && <span className="error-text">{errors.type}</span>}
+        {/* Resume Text Input */}
+        <div style={{ textAlign: 'left', marginBottom: '16px' }}>
+          <label htmlFor="resumeText" style={{ display: 'block', marginBottom: '6px', fontWeight: 500, fontSize: '14px' }}>
+            Candidate Resume (Optional)
+          </label>
+          <textarea
+            id="resumeText"
+            rows={3}
+            placeholder="Paste candidate resume text or project claims..."
+            value={resumeText}
+            onChange={(e) => setResumeText(e.target.value)}
+            disabled={isLoading}
+            style={{ width: '100%', borderRadius: '8px', background: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(255, 255, 255, 0.1)', color: '#f8fafc', padding: '10px' }}
+          />
         </div>
 
-        <div className="form-group">
-          <label>Duration (Minutes)</label>
-          <div className="options-grid">
-            {[10, 20, 30].map((d) => (
-              <button
-                key={d}
-                type="button"
-                className={`option-btn ${durationMinutes === d ? 'selected' : ''}`}
-                onClick={() => setDurationMinutes(d)}
-              >
-                {d} mins
-              </button>
-            ))}
-          </div>
-          {errors.durationMinutes && <span className="error-text">{errors.durationMinutes}</span>}
+        {/* Job Description Text Input */}
+        <div style={{ textAlign: 'left', marginBottom: '16px' }}>
+          <label htmlFor="jobDescriptionText" style={{ display: 'block', marginBottom: '6px', fontWeight: 500, fontSize: '14px' }}>
+            Job Description (Optional)
+          </label>
+          <textarea
+            id="jobDescriptionText"
+            rows={3}
+            placeholder="Paste job description requirements and responsibilities..."
+            value={jobDescriptionText}
+            onChange={(e) => setJobDescriptionText(e.target.value)}
+            disabled={isLoading}
+            style={{ width: '100%', borderRadius: '8px', background: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(255, 255, 255, 0.1)', color: '#f8fafc', padding: '10px' }}
+          />
         </div>
 
-        <button type="submit" className="btn-primary" disabled={isLoading} id="submit-setup-btn">
-          {isLoading ? 'Creating Session...' : 'Create Interview Session'}
+        {/* Interview Type Selection */}
+        <div style={{ textAlign: 'left', marginBottom: '16px' }}>
+          <label htmlFor="type" style={{ display: 'block', marginBottom: '6px', fontWeight: 500, fontSize: '14px' }}>
+            Interview Focus Type
+          </label>
+          <select
+            id="type"
+            value={type}
+            onChange={(e) => setType(e.target.value as InterviewType)}
+            disabled={isLoading}
+            style={{ width: '100%' }}
+          >
+            <option value="technical">Technical Focus (Architecture, System Design, Coding)</option>
+            <option value="behavioral">Behavioral Focus (Leadership, Team Conflict, Growth)</option>
+            <option value="mixed">Mixed Assessment (Technical + Behavioral)</option>
+          </select>
+        </div>
+
+        {/* Duration Selector */}
+        <div style={{ textAlign: 'left', marginBottom: '24px' }}>
+          <label htmlFor="durationMinutes" style={{ display: 'block', marginBottom: '6px', fontWeight: 500, fontSize: '14px' }}>
+            Session Duration
+          </label>
+          <select
+            id="durationMinutes"
+            value={durationMinutes}
+            onChange={(e) => setDurationMinutes(Number(e.target.value))}
+            disabled={isLoading}
+            style={{ width: '100%' }}
+          >
+            <option value={15}>15 Minutes (Brief Screening)</option>
+            <option value={20}>20 Minutes (Standard Technical Round)</option>
+            <option value={30}>30 Minutes (Deep Dive Session)</option>
+            <option value={45}>45 Minutes (Full Comprehensive Panel)</option>
+          </select>
+        </div>
+
+        {/* Submit Button */}
+        <button type="submit" className="btn-primary" disabled={isLoading} id="create-session-btn">
+          {isLoading ? 'Preparing Session...' : 'Create & Enter Waiting Room'}
         </button>
       </form>
     </div>

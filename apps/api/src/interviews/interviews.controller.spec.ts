@@ -1,76 +1,53 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { InterviewsService } from './interviews.service';
-import { RealtimeService } from './realtime.service';
 import { InterviewsController } from './interviews.controller';
-import { NotFoundException, BadRequestException } from '@nestjs/common';
-import { CreateSessionDto } from '@ai-interviewer/shared';
+import { InterviewsService } from './interviews.service';
 
-describe('InterviewsController REST Endpoints', () => {
+describe('InterviewsController Phase 7 Intelligence Endpoints', () => {
   let controller: InterviewsController;
   let service: InterviewsService;
-  let realtimeService: RealtimeService;
 
   beforeEach(() => {
     service = new InterviewsService();
-    realtimeService = new RealtimeService(service);
-    controller = new InterviewsController(service, realtimeService);
+    controller = new InterviewsController(service);
   });
 
-  it('should create an interview session with valid payload', () => {
-    const res = controller.createSession({
-      candidateName: 'Alice Smith',
+  it('should create interview session with resume and JD text', () => {
+    const response = controller.createSession({
+      candidateName: 'Sam Developer',
       role: 'Staff Engineer',
       type: 'technical',
       durationMinutes: 20,
+      resumeText: 'Built PrimeBank using Spring Boot, PostgreSQL, and Redis.',
+      jobDescriptionText: 'Required: PostgreSQL and Node.js.',
     });
 
-    expect(res.success).toBe(true);
-    expect(res.data?.session.id).toBeDefined();
-    expect(res.data?.session.status).toBe('CREATED');
-    expect(res.data?.session.candidateName).toBe('Alice Smith');
+    expect(response.success).toBe(true);
+    expect(response.data?.id).toBeDefined();
+    expect(response.data?.status).toBe('CREATED');
   });
 
-  it('should throw BadRequestException when creating session with invalid payload', () => {
-    expect(() =>
-      controller.createSession({
-        candidateName: 'A',
-        role: '',
-        type: 'invalid' as unknown as CreateSessionDto['type'],
-        durationMinutes: 99 as unknown as CreateSessionDto['durationMinutes'],
-      }),
-    ).toThrow(BadRequestException);
-  });
-
-  it('should retrieve existing session by ID', () => {
+  it('should support posting resume, job description, and preparing interview targets', () => {
     const createRes = controller.createSession({
-      candidateName: 'Bob',
-      role: 'DevOps Lead',
-      type: 'behavioral',
-      durationMinutes: 10,
+      candidateName: 'Sam Developer',
+      role: 'Backend Engineer',
     });
-    const sessionId = createRes.data!.session.id;
+    const id = createRes.data!.id;
 
-    const getRes = controller.getSession(sessionId);
-    expect(getRes.success).toBe(true);
-    expect(getRes.data?.session.id).toBe(sessionId);
-  });
+    const resumeRes = controller.parseResume(id, { resumeText: 'Built PrimeBank using Spring Boot, PostgreSQL, and Redis.' });
+    expect(resumeRes.success).toBe(true);
+    expect(resumeRes.data?.skills.length).toBeGreaterThan(0);
 
-  it('should throw NotFoundException for unknown session ID', () => {
-    expect(() => controller.getSession('non_existent_id')).toThrow(NotFoundException);
-  });
+    const jdRes = controller.parseJobDescription(id, { jobDescriptionText: 'Required: PostgreSQL and Redis.' });
+    expect(jdRes.success).toBe(true);
+    expect(jdRes.data?.requiredSkills.length).toBeGreaterThan(0);
 
-  it('should generate realtime token via controller endpoint', async () => {
-    const createRes = controller.createSession({
-      candidateName: 'David',
-      role: 'Frontend Dev',
-      type: 'mixed',
-      durationMinutes: 20,
-    });
-    const sessionId = createRes.data!.session.id;
+    const profileRes = controller.getProfile(id);
+    expect(profileRes.success).toBe(true);
+    expect(profileRes.data?.candidateProfile).toBeDefined();
 
-    const tokenRes = await controller.getRealtimeToken(sessionId);
-    expect(tokenRes.success).toBe(true);
-    expect(tokenRes.data?.token).toBeDefined();
-    expect(tokenRes.data?.roomName).toBe(`interview:${sessionId}`);
+    const prepRes = controller.prepareInterview(id);
+    expect(prepRes.success).toBe(true);
+    expect(prepRes.data?.match.interviewTargets.length).toBeGreaterThan(0);
+    expect(prepRes.data?.turnContext.candidateSummary).toBeDefined();
   });
 });

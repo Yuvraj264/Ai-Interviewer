@@ -35,6 +35,10 @@ var RealtimeVoiceSession = class {
   agentIdentity;
   engine;
   adaptiveEngine;
+  contextBuilder;
+  candidateProfile;
+  jobProfile;
+  match;
   conversationState = "IDLE";
   transcript = [];
   telemetry = {};
@@ -50,12 +54,29 @@ var RealtimeVoiceSession = class {
       maxQuestions: 6
     });
     this.adaptiveEngine = new import_interview_engine.AdaptiveQuestioningEngine();
+    this.contextBuilder = new import_interview_engine.InterviewContextBuilder();
+    const resumeParser = new import_interview_engine.ResumeParser();
+    const jdParser = new import_interview_engine.JobDescriptionParser();
+    const matcher = new import_interview_engine.CandidateJobMatcher();
+    this.candidateProfile = resumeParser.parseResume(
+      promptContext?.resumeText || `Name: ${promptContext?.candidateName || "Candidate"}`,
+      `cand_${sessionId}`,
+      promptContext?.candidateName
+    );
+    this.jobProfile = jdParser.parseJobDescription(
+      promptContext?.jobDescriptionText || `Role: ${promptContext?.role || "Software Engineer"}`,
+      `job_${sessionId}`,
+      promptContext?.role
+    );
+    this.match = matcher.matchCandidateToJob(this.candidateProfile, this.jobProfile);
     const instructions = (0, import_interview_engine.buildInterviewerInstructions)(promptContext);
     const env = (0, import_config.getValidatedEnv)();
     if (!env.OPENAI_API_KEY) {
       console.warn(`[Realtime Voice Session ${sessionId}] Warning: OPENAI_API_KEY is not configured. Running in simulated voice agent mode.`);
     }
-    console.log(`[Realtime Voice Session ${sessionId}] Adaptive Engine initialized. Prompt length: ${instructions.length} chars`);
+    console.log(
+      `[Realtime Voice Session ${sessionId}] Phase 7 Context Active (${this.match.interviewTargets.length} Targets). Prompt length: ${instructions.length} chars`
+    );
   }
   async startSession() {
     this.conversationState = "CONNECTING";
@@ -63,7 +84,7 @@ var RealtimeVoiceSession = class {
     const engineState = this.engine.startInterview();
     this.conversationState = "THINKING";
     const currentQ = engineState.currentQuestion;
-    const greetingText = currentQ ? currentQ.prompt : `Hi, welcome to your interview. I'm your AI interviewer today. To get started, could you briefly introduce yourself?`;
+    const greetingText = currentQ ? currentQ.prompt : `Hi ${this.candidateProfile.name || "there"}, welcome to your interview for the ${this.jobProfile.title} role. Could you briefly introduce yourself?`;
     await this.speak(greetingText);
   }
   async speak(text) {
@@ -108,6 +129,12 @@ var RealtimeVoiceSession = class {
     const currentQ = currentEngineState.currentQuestion;
     if (currentQ) {
       this.engine.submitAnswer(currentQ.id, candidateText);
+      const turnContext = this.contextBuilder.buildTurnContext(
+        this.candidateProfile,
+        this.jobProfile,
+        this.match,
+        currentQ.topic
+      );
       const adaptiveResult = await this.adaptiveEngine.processCandidateAnswer(
         this.sessionId,
         currentQ.id,
@@ -124,7 +151,7 @@ var RealtimeVoiceSession = class {
       this.adaptiveRecords.push(adaptiveResult.record);
       this.signalHistory.push(adaptiveResult.analysis.qualityCategory);
       console.log(
-        `[Realtime Voice Session ${this.sessionId}] [adaptive.decision] Action: ${adaptiveResult.decision.action}, Rationale: "${adaptiveResult.decision.rationale}", Selected Q: ${adaptiveResult.nextQuestion?.id}`
+        `[Realtime Voice Session ${this.sessionId}] [adaptive.decision] Action: ${adaptiveResult.decision.action}, Target: ${turnContext.activeTarget?.topic || "general"}, Selected Q: ${adaptiveResult.nextQuestion?.id}`
       );
     }
     const nextQ = this.engine.nextQuestion();
@@ -146,6 +173,9 @@ var RealtimeVoiceSession = class {
   }
   getAdaptiveRecords() {
     return [...this.adaptiveRecords];
+  }
+  getTurnContext() {
+    return this.contextBuilder.buildTurnContext(this.candidateProfile, this.jobProfile, this.match);
   }
   getTelemetry() {
     return { ...this.telemetry };

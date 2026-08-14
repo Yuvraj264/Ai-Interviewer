@@ -29,6 +29,8 @@ export interface InterviewSession {
   createdAt: string;
   startedAt?: string;
   completedAt?: string;
+  resumeText?: string;
+  jobDescriptionText?: string;
 }
 
 export type RealtimeConnectionState =
@@ -157,6 +159,96 @@ export interface AdaptiveDecisionRecord {
   timestamp: string;
 }
 
+// Phase 7 Resume & JD Intelligence Types
+export type VerificationStatus = 'UNVERIFIED' | 'PARTIALLY_VERIFIED' | 'SUPPORTED' | 'CONTRADICTED';
+export type TargetType =
+  | 'VERIFY_RESUME_CLAIM'
+  | 'TEST_REQUIRED_SKILL'
+  | 'DEEP_DIVE_PROJECT'
+  | 'EXPLORE_GAP'
+  | 'VERIFY_EXPERIENCE'
+  | 'BEHAVIORAL';
+export type TargetStatus = 'PENDING' | 'IN_PROGRESS' | 'SUFFICIENTLY_VERIFIED' | 'INSUFFICIENT_EVIDENCE' | 'SKIPPED';
+export type DocumentProcessingStatus = 'NOT_PROCESSED' | 'PROCESSING' | 'READY' | 'FAILED';
+
+export interface CandidateSkill {
+  canonicalName: string;
+  rawName: string;
+  category: string;
+  source: 'resume';
+  evidence: string;
+  verificationStatus: VerificationStatus;
+}
+
+export interface CandidateProject {
+  name: string;
+  description: string;
+  technologies: string[];
+  role?: string;
+  outcomes?: string[];
+}
+
+export interface CandidateExperience {
+  company: string;
+  role: string;
+  startDate?: string;
+  endDate?: string;
+  responsibilities: string[];
+  technologies: string[];
+}
+
+export interface CandidateProfile {
+  candidateId: string;
+  name?: string;
+  headline?: string;
+  summary?: string;
+  education: Array<{ institution: string; degree: string; field?: string }>;
+  experience: CandidateExperience[];
+  projects: CandidateProject[];
+  skills: CandidateSkill[];
+  sourceDocumentId?: string;
+}
+
+export interface SkillRequirement {
+  skill: string;
+  importance: 'CORE' | 'IMPORTANT' | 'OPTIONAL';
+  isRequired: boolean;
+  evidence?: string;
+}
+
+export interface JobProfile {
+  jobId: string;
+  title: string;
+  company?: string;
+  seniority?: string;
+  summary?: string;
+  requiredSkills: SkillRequirement[];
+  preferredSkills: SkillRequirement[];
+  responsibilities: string[];
+  qualifications: string[];
+  domains: string[];
+}
+
+export interface InterviewTarget {
+  id: string;
+  type: TargetType;
+  topic: string;
+  reason: string;
+  priority: 'HIGH' | 'MEDIUM' | 'LOW';
+  verificationGoal: string;
+  status: TargetStatus;
+}
+
+export interface CandidateJobProfile {
+  candidateId: string;
+  jobId: string;
+  matchedSkills: string[];
+  missingSkills: string[];
+  unverifiedSkills: string[];
+  relevantProjects: CandidateProject[];
+  interviewTargets: InterviewTarget[];
+}
+
 export interface TranscriptItem {
   id: string;
   speaker: 'ai' | 'candidate';
@@ -189,4 +281,4 @@ export interface ApiResponse<T = unknown> {
   timestamp: string;
 }
 
-export const PROJECT_PHASE = 'Phase 6 — Adaptive Questioning Engine' as const;
+export const PROJECT_PHASE = 'Phase 7 — Resume + Job Description Intelligence' as const;

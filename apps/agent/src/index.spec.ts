@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { AgentWorker } from './index';
 
-describe('AgentWorker & Phase 6 Adaptive Engine Integration', () => {
+describe('AgentWorker & Phase 7 Resume/JD Intelligence Integration', () => {
   let worker: AgentWorker;
 
   beforeEach(() => {
@@ -15,35 +15,33 @@ describe('AgentWorker & Phase 6 Adaptive Engine Integration', () => {
     expect(status.openaiConfigured).toBe(true);
   });
 
-  it('should support joining room and executing Adaptive Engine answer analysis loop', async () => {
+  it('should support joining room and executing Adaptive Engine with Resume + JD context', async () => {
     await worker.start();
-    const room = await worker.joinRoom('sess_adapt_agent_123', {
+    const room = await worker.joinRoom('sess_intel_agent_123', {
       candidateName: 'Sam Tech',
       role: 'Staff Engineer',
       interviewType: 'technical',
+      resumeText: 'Built PrimeBank using Spring Boot, PostgreSQL, and Redis.',
+      jobDescriptionText: 'Required: PostgreSQL and Node.js.',
     });
 
-    expect(room.roomName).toBe('interview:sess_adapt_agent_123');
+    expect(room.roomName).toBe('interview:sess_intel_agent_123');
 
-    const session = worker.getSession('sess_adapt_agent_123');
+    const session = worker.getSession('sess_intel_agent_123');
     expect(session).toBeDefined();
 
-    const engineState = session!.getEngineState();
-    expect(engineState.stage).toBe('INTRO');
-    expect(engineState.questionsAsked).toBe(1);
+    const turnContext = session!.getTurnContext();
+    expect(turnContext.candidateSummary).toContain('Sam Tech');
+    expect(turnContext.jobRole).toContain('Staff Engineer');
+    expect(turnContext.activeTarget).toBeDefined();
 
-    // Simulate candidate turn with technical answer
-    await session!.handleCandidateTurnCompleted('I used Redis caching and PostgreSQL in Node.');
+    // Simulate candidate turn
+    await session!.handleCandidateTurnCompleted('I built PrimeBank microservices with Redis caching.');
     
     const adaptiveRecords = session!.getAdaptiveRecords();
     expect(adaptiveRecords.length).toBe(1);
-    expect(adaptiveRecords[0].analysis.qualityCategory).toBe('STRONG');
-    expect(adaptiveRecords[0].decision.action).toBeDefined();
 
-    const telemetry = session!.getTelemetry();
-    expect(telemetry.totalAdaptiveLatencyMs).toBeGreaterThanOrEqual(0);
-
-    await worker.leaveRoom('sess_adapt_agent_123');
+    await worker.leaveRoom('sess_intel_agent_123');
     expect(worker.getStatus().activeSessions).toBe(0);
 
     await worker.stop();

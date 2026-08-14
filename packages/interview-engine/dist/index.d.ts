@@ -1,4 +1,4 @@
-import { EngineQuestion, InterviewType, InterviewConfig, InterviewEngineState, InterviewStage, AnswerAnalysis, QualityCategory, AdaptiveDecision, AdaptiveDecisionRecord } from '@ai-interviewer/shared';
+import { EngineQuestion, InterviewType, InterviewConfig, InterviewEngineState, InterviewStage, AnswerAnalysis, QualityCategory, AdaptiveDecision, AdaptiveDecisionRecord, CandidateProfile, JobProfile, CandidateJobProfile, InterviewTarget } from '@ai-interviewer/shared';
 
 interface InterviewerPromptContext {
     candidateName?: string;
@@ -111,6 +111,52 @@ declare class AdaptiveQuestioningEngine {
     executeFallback(sessionId: string, currentQuestionId: string, askedQuestionIds: string[], currentStage: InterviewStage, reason: FallbackReason, startTime?: number): AdaptiveEngineResult;
 }
 
+declare class SkillNormalizer {
+    normalizeSkill(rawSkill: string): {
+        canonicalName: string;
+        category: string;
+    };
+}
+
+declare const RESUME_PARSER_VERSION: "RESUME_PARSER_V1";
+declare class ResumeParser {
+    private version;
+    private normalizer;
+    getVersion(): string;
+    parseResume(rawText: string, candidateId: string, candidateName?: string): CandidateProfile;
+    private containsPromptInjection;
+    private extractSkills;
+    private extractProjects;
+    private extractExperience;
+    private extractName;
+}
+
+declare const JD_PARSER_VERSION: "JD_PARSER_V1";
+declare class JobDescriptionParser {
+    private version;
+    private normalizer;
+    getVersion(): string;
+    parseJobDescription(rawText: string, jobId: string, targetRole?: string): JobProfile;
+    private extractSkillRequirements;
+    private extractTitle;
+}
+
+declare class CandidateJobMatcher {
+    matchCandidateToJob(candidate: CandidateProfile, job: JobProfile): CandidateJobProfile;
+}
+
+interface BoundedInterviewContext {
+    candidateSummary: string;
+    jobRole: string;
+    activeTarget?: InterviewTarget;
+    relevantProjectSnippet?: string;
+    relevantSkillSnippet?: string;
+    contextBudgetChars: number;
+}
+declare class InterviewContextBuilder {
+    buildTurnContext(candidate: CandidateProfile, job: JobProfile, match: CandidateJobProfile, currentTopic?: string): BoundedInterviewContext;
+}
+
 interface InterviewInteractionProvider {
     start(): Promise<void>;
     submitCandidateResponse(response: string): Promise<void>;
@@ -151,4 +197,4 @@ declare class MockInterviewer implements InterviewInteractionProvider {
     private notifyState;
 }
 
-export { ADAPTIVE_DECISION_VERSION, ANSWER_ANALYSIS_VERSION, AdaptiveDecisionMaker, type AdaptiveEngineResult, AdaptiveQuestionSelector, AdaptiveQuestioningEngine, type AnalyzerOptions, AnswerAnalyzer, DeterministicFallbackHandler, type FallbackReason, InterviewAlreadyCompletedError, InterviewEngine, type InterviewInteractionProvider, type InterviewerPromptContext, InvalidTransitionError, MockInterviewer, type MockInterviewerState, QUESTION_BANK, QuestionBudgetExceededError, type QuestionSelectorOptions, SessionNotFoundError, buildInterviewerInstructions, getQuestionsForType };
+export { ADAPTIVE_DECISION_VERSION, ANSWER_ANALYSIS_VERSION, AdaptiveDecisionMaker, type AdaptiveEngineResult, AdaptiveQuestionSelector, AdaptiveQuestioningEngine, type AnalyzerOptions, AnswerAnalyzer, type BoundedInterviewContext, CandidateJobMatcher, DeterministicFallbackHandler, type FallbackReason, InterviewAlreadyCompletedError, InterviewContextBuilder, InterviewEngine, type InterviewInteractionProvider, type InterviewerPromptContext, InvalidTransitionError, JD_PARSER_VERSION, JobDescriptionParser, MockInterviewer, type MockInterviewerState, QUESTION_BANK, QuestionBudgetExceededError, type QuestionSelectorOptions, RESUME_PARSER_VERSION, ResumeParser, SessionNotFoundError, SkillNormalizer, buildInterviewerInstructions, getQuestionsForType };

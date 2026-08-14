@@ -2,14 +2,14 @@ import { describe, it, expect } from 'vitest';
 import {
   PROJECT_PHASE,
   InterviewStage,
-  EngineQuestion,
-  AnswerAnalysis,
-  AdaptiveDecision,
+  CandidateProfile,
+  JobProfile,
+  CandidateJobProfile,
 } from './index';
 
-describe('Shared Package Phase 6 Adaptive Contracts', () => {
-  it('should export current Phase 6 project phase constant', () => {
-    expect(PROJECT_PHASE).toBe('Phase 6 — Adaptive Questioning Engine');
+describe('Shared Package Phase 7 Intelligence Contracts', () => {
+  it('should export current Phase 7 project phase constant', () => {
+    expect(PROJECT_PHASE).toBe('Phase 7 — Resume + Job Description Intelligence');
   });
 
   it('should support valid InterviewStage enum values', () => {
@@ -30,44 +30,49 @@ describe('Shared Package Phase 6 Adaptive Contracts', () => {
     expect(stages.length).toBe(12);
   });
 
-  it('should validate EngineQuestion contract', () => {
-    const q: EngineQuestion = {
-      id: 'tech_rest_01',
-      stage: 'TECHNICAL',
-      topic: 'rest-api',
-      difficulty: 'medium',
-      prompt: 'Explain what a REST API is.',
-      objective: 'Evaluate REST architecture understanding.',
-    };
-    expect(q.id).toBe('tech_rest_01');
-    expect(q.difficulty).toBe('medium');
-  });
-
-  it('should validate AnswerAnalysis and AdaptiveDecision contracts', () => {
-    const analysis: AnswerAnalysis = {
-      answerId: 'ans_123',
-      questionId: 'q_tech_rest_01',
-      transcript: 'I used Redis for caching.',
-      completeness: 'HIGH',
-      relevance: 'HIGH',
-      depth: 'MEDIUM',
-      qualityCategory: 'STRONG',
-      conceptsDetected: ['redis', 'caching'],
-      skillsDemonstrated: ['caching'],
-      missingConcepts: ['cache-invalidation'],
-      evidence: [{ claim: 'Candidate used Redis for caching', confidence: 'HIGH' }],
+  it('should validate CandidateProfile, JobProfile, and CandidateJobProfile contracts', () => {
+    const candidateProfile: CandidateProfile = {
+      candidateId: 'cand_123',
+      name: 'Sam Developer',
+      headline: 'Full Stack Engineer',
+      education: [],
+      experience: [],
+      projects: [{ name: 'PrimeBank', description: 'Banking System', technologies: ['Spring Boot', 'PostgreSQL', 'Redis'] }],
+      skills: [{ canonicalName: 'Node.js', rawName: 'Node JS', category: 'FRAMEWORK', source: 'resume', evidence: 'Built microservices', verificationStatus: 'UNVERIFIED' }],
     };
 
-    const decision: AdaptiveDecision = {
-      action: 'FOLLOW_UP',
-      targetTopic: 'cache-invalidation',
-      difficulty: 'medium',
-      rationale: 'Candidate described caching but did not explain invalidation.',
-      confidence: 0.9,
-      basedOnQuestionId: 'q_tech_rest_01',
+    const jobProfile: JobProfile = {
+      jobId: 'job_456',
+      title: 'Backend Engineer',
+      requiredSkills: [{ skill: 'Node.js', importance: 'CORE', isRequired: true }],
+      preferredSkills: [{ skill: 'Redis', importance: 'IMPORTANT', isRequired: false }],
+      responsibilities: ['Build REST APIs'],
+      qualifications: ['B.S. CS'],
+      domains: ['fintech'],
     };
 
-    expect(analysis.qualityCategory).toBe('STRONG');
-    expect(decision.action).toBe('FOLLOW_UP');
+    const match: CandidateJobProfile = {
+      candidateId: 'cand_123',
+      jobId: 'job_456',
+      matchedSkills: ['Node.js'],
+      missingSkills: [],
+      unverifiedSkills: ['Node.js', 'Redis'],
+      relevantProjects: candidateProfile.projects,
+      interviewTargets: [
+        {
+          id: 'target_1',
+          type: 'VERIFY_RESUME_CLAIM',
+          topic: 'Node.js',
+          reason: 'Verify Node.js experience claimed on resume',
+          priority: 'HIGH',
+          verificationGoal: 'Confirm async I/O understanding',
+          status: 'PENDING',
+        },
+      ],
+    };
+
+    expect(candidateProfile.skills[0].verificationStatus).toBe('UNVERIFIED');
+    expect(jobProfile.requiredSkills[0].isRequired).toBe(true);
+    expect(match.interviewTargets.length).toBe(1);
   });
 });

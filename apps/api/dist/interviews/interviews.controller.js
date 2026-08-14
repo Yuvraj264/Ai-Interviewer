@@ -15,17 +15,15 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.InterviewsController = void 0;
 const common_1 = require("@nestjs/common");
 const interviews_service_1 = require("./interviews.service");
-const realtime_service_1 = require("./realtime.service");
 let InterviewsController = class InterviewsController {
-    constructor(interviewsService, realtimeService) {
+    constructor(interviewsService) {
         this.interviewsService = interviewsService;
-        this.realtimeService = realtimeService;
     }
-    createSession(dto) {
-        const session = this.interviewsService.createSession(dto);
+    createSession(body) {
+        const session = this.interviewsService.createSession(body);
         return {
             success: true,
-            data: { session },
+            data: session,
             timestamp: new Date().toISOString(),
         };
     }
@@ -33,7 +31,7 @@ let InterviewsController = class InterviewsController {
         const session = this.interviewsService.getSession(id);
         return {
             success: true,
-            data: { session },
+            data: session,
             timestamp: new Date().toISOString(),
         };
     }
@@ -41,7 +39,7 @@ let InterviewsController = class InterviewsController {
         const session = this.interviewsService.startSession(id);
         return {
             success: true,
-            data: { session },
+            data: session,
             timestamp: new Date().toISOString(),
         };
     }
@@ -49,15 +47,39 @@ let InterviewsController = class InterviewsController {
         const session = this.interviewsService.endSession(id);
         return {
             success: true,
-            data: { session },
+            data: session,
             timestamp: new Date().toISOString(),
         };
     }
-    async getRealtimeToken(id) {
-        const realtimeData = await this.realtimeService.generateCandidateToken(id);
+    parseResume(id, body) {
+        const profile = this.interviewsService.parseResume(id, body.resumeText);
         return {
             success: true,
-            data: realtimeData,
+            data: profile,
+            timestamp: new Date().toISOString(),
+        };
+    }
+    parseJobDescription(id, body) {
+        const profile = this.interviewsService.parseJobDescription(id, body.jobDescriptionText);
+        return {
+            success: true,
+            data: profile,
+            timestamp: new Date().toISOString(),
+        };
+    }
+    getProfile(id) {
+        const profileData = this.interviewsService.getProfile(id);
+        return {
+            success: true,
+            data: profileData,
+            timestamp: new Date().toISOString(),
+        };
+    }
+    prepareInterview(id) {
+        const preparedData = this.interviewsService.prepareInterview(id);
+        return {
+            success: true,
+            data: preparedData,
             timestamp: new Date().toISOString(),
         };
     }
@@ -65,7 +87,6 @@ let InterviewsController = class InterviewsController {
 exports.InterviewsController = InterviewsController;
 __decorate([
     (0, common_1.Post)(),
-    (0, common_1.HttpCode)(common_1.HttpStatus.CREATED),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
@@ -80,7 +101,6 @@ __decorate([
 ], InterviewsController.prototype, "getSession", null);
 __decorate([
     (0, common_1.Post)(':id/start'),
-    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
@@ -88,23 +108,43 @@ __decorate([
 ], InterviewsController.prototype, "startSession", null);
 __decorate([
     (0, common_1.Post)(':id/end'),
-    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Object)
 ], InterviewsController.prototype, "endSession", null);
 __decorate([
-    (0, common_1.Post)(':id/realtime/token'),
-    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, common_1.Post)(':id/resume'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Object)
+], InterviewsController.prototype, "parseResume", null);
+__decorate([
+    (0, common_1.Post)(':id/jd'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Object)
+], InterviewsController.prototype, "parseJobDescription", null);
+__decorate([
+    (0, common_1.Get)(':id/profile'),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", Promise)
-], InterviewsController.prototype, "getRealtimeToken", null);
+    __metadata("design:returntype", Object)
+], InterviewsController.prototype, "getProfile", null);
+__decorate([
+    (0, common_1.Post)(':id/prepare'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Object)
+], InterviewsController.prototype, "prepareInterview", null);
 exports.InterviewsController = InterviewsController = __decorate([
     (0, common_1.Controller)('interviews'),
-    __metadata("design:paramtypes", [interviews_service_1.InterviewsService,
-        realtime_service_1.RealtimeService])
+    __metadata("design:paramtypes", [interviews_service_1.InterviewsService])
 ], InterviewsController);
 //# sourceMappingURL=interviews.controller.js.map

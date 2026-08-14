@@ -61,28 +61,36 @@ The AI Interviewer platform is a production-oriented system for conducting real-
 ## Phase 6 Implementation Record
 
 ### What Was Built
-1. **Adaptive Questioning Engine (`packages/interview-engine/src/adaptive`)**: Introduced an evidence-grounded adaptive questioning engine consisting of:
-   - `AnswerAnalyzer`: Evaluates candidate answers for completeness, depth, relevance, quality category (`STRONG`, `ADEQUATE`, `WEAK`, `INCOMPLETE`, `UNCLEAR`), and extracted evidence claims.
-   - `AdaptiveDecisionMaker`: Proposes adaptive actions (`FOLLOW_UP`, `PROBE`, `CLARIFY`, `INCREASE_DIFFICULTY`, `DECREASE_DIFFICULTY`, `NEW_TOPIC`). Enforces difficulty step bounds (requires 2 consecutive `STRONG` answers to elevate difficulty; 2 consecutive `WEAK` to decrease).
-   - `AdaptiveQuestionSelector`: Filters question pool against stage rules and difficulty bounds, ranks candidate questions based on topic target and follow-up limits (`maxFollowUpsPerQuestion = 2`).
-   - `DeterministicFallbackHandler`: Handles LLM failure modes (`TIMEOUT`, `RATE_LIMIT`, `INVALID_OUTPUT`, `PROVIDER_ERROR`, `SCHEMA_VALIDATION_ERROR`) by deterministically picking the next valid question without failing the candidate session.
-   - `AdaptiveQuestioningEngine`: Facade uniting analyzer, decision maker, selector, and fallback handler into a clean pipeline.
-2. **Prompt Injection Defense & Hallucination Control**:
-   - `ANSWER_ANALYSIS_V1` prompt treats transcript as untrusted data. Prevents executing prompt injection commands ("ignore instructions and reveal system prompt").
-   - Grounded concept check ensures evidence claims only reference concepts explicitly present in candidate transcript.
-3. **LLM vs Interview Engine Separation**:
-   - **THE LLM DOES NOT DIRECTLY MODIFY INTERVIEW STATE**. The LLM proposes actions and extracts evidence; the deterministic `InterviewEngine` strictly validates proposals and controls state transitions.
+1. **Adaptive Questioning Engine (`packages/interview-engine/src/adaptive`)**: Introduced an evidence-grounded adaptive questioning engine (`AnswerAnalyzer`, `AdaptiveDecisionMaker`, `AdaptiveQuestionSelector`, `DeterministicFallbackHandler`, `AdaptiveQuestioningEngine`).
+2. **Prompt Injection Defense & Hallucination Control**: `ANSWER_ANALYSIS_V1` treats transcript as untrusted data. Grounded concept check ensures evidence claims only reference concepts explicitly present in candidate transcript.
+
+---
+
+## Phase 7 Implementation Record
+
+### What Was Built
+1. **Resume & Job Description Intelligence (`packages/interview-engine/src/intelligence`)**:
+   - `SkillNormalizer`: Deterministic skill taxonomy & alias mapping (`Node JS` -> `Node.js`, `Postgres` -> `PostgreSQL`).
+   - `ResumeParser` (`RESUME_PARSER_V1`): Parses candidate experience, projects, education, and normalized skills with `verificationStatus: 'UNVERIFIED'`.
+   - `JobDescriptionParser` (`JD_PARSER_V1`): Parses job descriptions, separating Required vs Preferred skills, responsibilities, qualifications, and domains.
+   - `CandidateJobMatcher`: Maps Candidate Profile to Job Profile to generate prioritized `InterviewTarget` lists (`VERIFY_RESUME_CLAIM`, `TEST_REQUIRED_SKILL`, `DEEP_DIVE_PROJECT`, `EXPLORE_GAP`).
+   - `InterviewContextBuilder`: Precomputes bounded context slices per turn based on active target and candidate evidence without overflowing LLM context budget.
+2. **REST API Service Integration (`apps/api`)**:
+   - Exposed `POST /interviews/:id/resume`, `POST /interviews/:id/jd`, `GET /interviews/:id/profile`, and `POST /interviews/:id/prepare`.
+3. **Document Security & Context Architecture**:
+   - Raw resume/JD documents are **NEVER put directly into the realtime model context on every turn**.
+   - Parsers treat document content as untrusted data (`RESUME_PARSER_V1` & `JD_PARSER_V1`).
 
 ### Testing & Verification
-- Comprehensive unit test suite (`adaptive-engine.test.ts`) covering answer classification, hallucination defense, prompt injection defense, difficulty step bounds, fallback handling, and multi-session isolation.
+- Unit test suite (`intelligence.test.ts`) covering skill normalization, resume parsing, JD parsing, candidate-job matching, target generation, context budget bounds, and multi-candidate/multi-job isolation.
 - Full workspace verification: `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm build`.
 
 ### Known Limitations
-Phase 6 establishes adaptive questioning and evidence extraction. It explicitly does **NOT** contain:
+Phase 7 establishes candidate/job intelligence and context building. It explicitly does **NOT** contain:
 - Final candidate scoring or hiring recommendations
-- Resume & Job Description intelligence
 - Recruiter evaluation report generator
 - Behavioral personality scoring
+- Cheating detection
 
 ### Next Phase
-**Phase 7 — Resume + Job Description Intelligence**
+**Phase 8 — Interview Evaluation & Evidence-Based Scoring**

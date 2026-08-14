@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@ai-interviewer/config": "workspace:*",
+    "@ai-interviewer/interview-engine": "workspace:*",
     "@ai-interviewer/shared": "workspace:*",
     "@nestjs/common": "^10.3.8",
     "@nestjs/core": "^10.3.8",

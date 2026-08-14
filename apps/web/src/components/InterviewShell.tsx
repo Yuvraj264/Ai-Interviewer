@@ -187,6 +187,21 @@ export const InterviewShell: React.FC<InterviewShellProps> = ({ session, onCompl
             ⚡ Adaptive: Active
           </div>
 
+          {/* Intelligence Context Badge */}
+          <div
+            className="badge"
+            style={{
+              margin: 0,
+              padding: '4px 10px',
+              fontSize: '11px',
+              backgroundColor: 'rgba(234, 179, 8, 0.15)',
+              borderColor: 'rgba(234, 179, 8, 0.3)',
+              color: '#facc15',
+            }}
+          >
+            🎯 Resume + JD Context Active
+          </div>
+
           {/* AI Voice State Badge */}
           <div
             className="badge"

@@ -7,6 +7,11 @@ export * from './adaptive/decision-maker';
 export * from './adaptive/question-selector';
 export * from './adaptive/fallback-handler';
 export * from './adaptive/adaptive-engine';
+export * from './intelligence/skill-normalizer';
+export * from './intelligence/resume-parser';
+export * from './intelligence/jd-parser';
+export * from './intelligence/matcher';
+export * from './intelligence/context-builder';
 
 export interface InterviewInteractionProvider {
   start(): Promise<void>;

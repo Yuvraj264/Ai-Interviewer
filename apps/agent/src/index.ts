@@ -33,7 +33,7 @@ export class AgentWorker {
 
   public async joinRoom(
     sessionId: string,
-    context?: { candidateName?: string; role?: string; interviewType?: string },
+    context?: { candidateName?: string; role?: string; interviewType?: string; resumeText?: string; jobDescriptionText?: string },
   ): Promise<AgentRoomSession> {
     if (!this.isRunning) {
       throw new Error('AgentWorker must be started before joining rooms.');

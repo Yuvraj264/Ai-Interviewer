@@ -4053,7 +4053,7 @@ var createSessionSchema = external_exports.object({
 });
 
 // src/index.ts
-var PROJECT_PHASE = "Phase 6 \u2014 Adaptive Questioning Engine";
+var PROJECT_PHASE = "Phase 7 \u2014 Resume + Job Description Intelligence";
 export {
   PROJECT_PHASE,
   createSessionSchema
