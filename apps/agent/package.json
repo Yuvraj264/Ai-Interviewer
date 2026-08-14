@@ -1,0 +1,25 @@
+{
+  "name": "@ai-interviewer/agent",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsup src/index.ts --format cjs --dts",
+    "start": "node dist/index.js",
+    "lint": "eslint \"src/**/*.ts\" --no-error-on-unmatched-pattern",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@ai-interviewer/config": "workspace:*",
+    "@ai-interviewer/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.12",
+    "tsup": "^8.0.2",
+    "tsx": "^4.10.3",
+    "typescript": "^5.4.5",
+    "vitest": "^1.6.0"
+  }
+}
