@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 declare const envSchema: z.ZodObject<{
-    NODE_ENV: z.ZodDefault<z.ZodEnum<["development", "test", "production"]>>;
+    NODE_ENV: z.ZodDefault<z.ZodEnum<["development", "test", "staging", "production"]>>;
     PORT: z.ZodDefault<z.ZodNumber>;
     API_PORT: z.ZodDefault<z.ZodNumber>;
     DATABASE_URL: z.ZodDefault<z.ZodString>;
@@ -13,7 +13,7 @@ declare const envSchema: z.ZodObject<{
     OPENAI_REALTIME_MODEL: z.ZodDefault<z.ZodString>;
     OPENAI_REALTIME_VOICE: z.ZodDefault<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
-    NODE_ENV: "development" | "test" | "production";
+    NODE_ENV: "development" | "test" | "staging" | "production";
     PORT: number;
     API_PORT: number;
     DATABASE_URL: string;
@@ -25,7 +25,7 @@ declare const envSchema: z.ZodObject<{
     OPENAI_REALTIME_MODEL: string;
     OPENAI_REALTIME_VOICE: string;
 }, {
-    NODE_ENV?: "development" | "test" | "production" | undefined;
+    NODE_ENV?: "development" | "test" | "staging" | "production" | undefined;
     PORT?: number | undefined;
     API_PORT?: number | undefined;
     DATABASE_URL?: string | undefined;

@@ -38,6 +38,7 @@ declare class RealtimeVoiceSession {
     getAdaptiveRecords(): AdaptiveDecisionRecord[];
     getTurnContext(): BoundedInterviewContext;
     getTelemetry(): LatencyTelemetry;
+    handleReconnection(): Promise<void>;
     stopSession(): Promise<void>;
 }
 

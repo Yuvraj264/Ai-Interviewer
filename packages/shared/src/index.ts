@@ -326,7 +326,7 @@ export interface HumanReview {
   timestamp: string;
 }
 
-// Phase 9 Recruiter Dashboard & Analytics Types
+// Phase 9 Dashboard & Analytics Types
 export interface DashboardOverviewMetrics {
   totalInterviews: number;
   activeInterviews: number;
@@ -379,6 +379,32 @@ export interface RecruiterTenantContext {
   role: 'ADMIN' | 'RECRUITER' | 'REVIEWER';
 }
 
+// Phase 10 Production Hardening & Load Test Types
+export interface DeepHealthStatus {
+  status: 'ok' | 'degraded' | 'down';
+  timestamp: string;
+  uptime: number;
+  environment: string;
+  service: string;
+  services: {
+    database: boolean;
+    redis: boolean;
+    livekit: boolean;
+  };
+}
+
+export interface LoadTestResult {
+  concurrency: number;
+  durationSeconds: number;
+  totalRequests: number;
+  rps: number;
+  p50Ms: number;
+  p95Ms: number;
+  p99Ms: number;
+  errorRatePercentage: number;
+  bottleneck: string;
+}
+
 export interface TranscriptItem {
   id: string;
   speaker: 'ai' | 'candidate';
@@ -411,4 +437,4 @@ export interface ApiResponse<T = unknown> {
   timestamp: string;
 }
 
-export const PROJECT_PHASE = 'Phase 9 — Recruiter Dashboard & Interview Analytics' as const;
+export const PROJECT_PHASE = 'Phase 10 — Production Hardening, Load Testing & Deployment' as const;

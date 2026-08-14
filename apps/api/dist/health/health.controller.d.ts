@@ -1,8 +1,7 @@
-import { SystemHealth } from '@ai-interviewer/shared';
+import { ApiResponse, SystemHealth, DeepHealthStatus } from '@ai-interviewer/shared';
 export declare class HealthController {
     private readonly startTime;
-    getHealth(): SystemHealth & {
-        phase: string;
-    };
+    getHealth(): ApiResponse<SystemHealth>;
+    getReadiness(): ApiResponse<DeepHealthStatus>;
 }
 //# sourceMappingURL=health.controller.d.ts.map

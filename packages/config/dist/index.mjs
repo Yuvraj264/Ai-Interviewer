@@ -3,7 +3,7 @@ import { z } from "zod";
 import dotenv from "dotenv";
 dotenv.config();
 var envSchema = z.object({
-  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+  NODE_ENV: z.enum(["development", "test", "staging", "production"]).default("development"),
   PORT: z.coerce.number().default(3e3),
   API_PORT: z.coerce.number().default(3001),
   DATABASE_URL: z.string().default("postgresql://postgres:postgres@localhost:5432/ai_interviewer_dev"),
@@ -21,7 +21,20 @@ function getValidatedEnv(env = process.env) {
     console.error("Invalid environment variables:", result.error.flatten().fieldErrors);
     throw new Error("Environment variable validation failed");
   }
-  return result.data;
+  const parsed = result.data;
+  if (parsed.NODE_ENV === "production") {
+    const missing = [];
+    if (!parsed.DATABASE_URL || parsed.DATABASE_URL.includes("localhost")) missing.push("DATABASE_URL");
+    if (!parsed.LIVEKIT_API_KEY || parsed.LIVEKIT_API_KEY === "devkey") missing.push("LIVEKIT_API_KEY");
+    if (!parsed.LIVEKIT_API_SECRET || parsed.LIVEKIT_API_SECRET === "secret") missing.push("LIVEKIT_API_SECRET");
+    if (!parsed.OPENAI_API_KEY) missing.push("OPENAI_API_KEY");
+    if (missing.length > 0) {
+      const msg = `[Production Hardening] Critical startup check failed: Missing or default credentials for [${missing.join(", ")}] in production environment.`;
+      console.error(msg);
+      throw new Error(msg);
+    }
+  }
+  return parsed;
 }
 export {
   envSchema,

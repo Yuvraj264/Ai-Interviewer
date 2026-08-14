@@ -4053,7 +4053,7 @@ var createSessionSchema = external_exports.object({
 });
 
 // src/index.ts
-var PROJECT_PHASE = "Phase 9 \u2014 Recruiter Dashboard & Interview Analytics";
+var PROJECT_PHASE = "Phase 10 \u2014 Production Hardening, Load Testing & Deployment";
 export {
   PROJECT_PHASE,
   createSessionSchema

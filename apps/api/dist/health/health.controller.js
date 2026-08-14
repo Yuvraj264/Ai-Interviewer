@@ -12,20 +12,43 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.HealthController = void 0;
 const common_1 = require("@nestjs/common");
 const shared_1 = require("@ai-interviewer/shared");
-const config_1 = require("@ai-interviewer/config");
 let HealthController = class HealthController {
     constructor() {
         this.startTime = Date.now();
     }
     getHealth() {
-        const env = (0, config_1.getValidatedEnv)();
+        const uptimeSeconds = Math.floor((Date.now() - this.startTime) / 1000);
         return {
-            status: 'ok',
+            success: true,
+            data: {
+                status: 'ok',
+                timestamp: new Date().toISOString(),
+                uptime: uptimeSeconds,
+                environment: process.env.NODE_ENV || 'development',
+                service: shared_1.PROJECT_PHASE,
+            },
             timestamp: new Date().toISOString(),
-            uptime: Math.floor((Date.now() - this.startTime) / 1000),
-            environment: env.NODE_ENV,
-            service: 'api',
-            phase: shared_1.PROJECT_PHASE,
+        };
+    }
+    getReadiness() {
+        const uptimeSeconds = Math.floor((Date.now() - this.startTime) / 1000);
+        const services = {
+            database: true,
+            redis: true,
+            livekit: Boolean(process.env.LIVEKIT_API_KEY),
+        };
+        const isAllOk = Object.values(services).every(Boolean);
+        return {
+            success: true,
+            data: {
+                status: isAllOk ? 'ok' : 'degraded',
+                timestamp: new Date().toISOString(),
+                uptime: uptimeSeconds,
+                environment: process.env.NODE_ENV || 'development',
+                service: shared_1.PROJECT_PHASE,
+                services,
+            },
+            timestamp: new Date().toISOString(),
         };
     }
 };
@@ -36,6 +59,12 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Object)
 ], HealthController.prototype, "getHealth", null);
+__decorate([
+    (0, common_1.Get)('readiness'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Object)
+], HealthController.prototype, "getReadiness", null);
 exports.HealthController = HealthController = __decorate([
     (0, common_1.Controller)('health')
 ], HealthController);

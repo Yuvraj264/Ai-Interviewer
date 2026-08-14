@@ -1,57 +1,43 @@
 import { describe, it, expect } from 'vitest';
 import {
   PROJECT_PHASE,
-  DashboardOverviewMetrics,
-  AnalyticsData,
+  DeepHealthStatus,
+  LoadTestResult,
 } from './index';
 
-describe('Shared Package Phase 9 Dashboard & Analytics Contracts', () => {
-  it('should define the correct current project phase', () => {
-    expect(PROJECT_PHASE).toBe('Phase 9 — Recruiter Dashboard & Interview Analytics');
+describe('Shared Package Phase 10 Production Hardening Contracts', () => {
+  it('should define the correct Phase 10 project phase', () => {
+    expect(PROJECT_PHASE).toBe('Phase 10 — Production Hardening, Load Testing & Deployment');
   });
 
-  it('should support DashboardOverviewMetrics and AnalyticsData structures', () => {
-    const metrics: DashboardOverviewMetrics = {
-      totalInterviews: 10,
-      activeInterviews: 2,
-      completedInterviews: 8,
-      pendingEvaluations: 1,
-      interviewsNeedingReview: 2,
-      completionRatePercentage: 80.0,
-      averageDurationMinutes: 18.5,
-      averageRequirementCoveragePercentage: 85.0,
-    };
-
-    expect(metrics.totalInterviews).toBe(10);
-    expect(metrics.completionRatePercentage).toBe(80.0);
-
-    const analytics: AnalyticsData = {
-      operational: {
-        startedCount: 10,
-        completedCount: 8,
-        completionRate: 80.0,
-        avgDurationMinutes: 18.5,
-        avgQuestionCount: 5.2,
-      },
-      aiBehavior: {
-        adaptiveFollowUpRate: 35.0,
-        fallbackRate: 2.5,
-        avgAdaptiveLatencyMs: 45,
-        topicDistribution: { Technical: 60, SystemDesign: 40 },
-      },
-      evaluation: {
-        evaluationCompletionRate: 100.0,
-        insufficientEvidenceRate: 10.0,
-        humanReviewRate: 25.0,
-        avgProcessingTimeMs: 120,
-      },
-      requirementCoverage: {
-        mostUntestedRequirements: ['Kubernetes'],
-        coverageByJob: { 'Backend Engineer': 85.0 },
+  it('should support DeepHealthStatus and LoadTestResult contracts', () => {
+    const health: DeepHealthStatus = {
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      uptime: 1200,
+      environment: 'production',
+      service: 'api-service',
+      services: {
+        database: true,
+        redis: true,
+        livekit: true,
       },
     };
+    expect(health.status).toBe('ok');
+    expect(health.services.database).toBe(true);
 
-    expect(analytics.operational.completionRate).toBe(80.0);
-    expect(analytics.aiBehavior.fallbackRate).toBe(2.5);
+    const loadResult: LoadTestResult = {
+      concurrency: 50,
+      durationSeconds: 10,
+      totalRequests: 500,
+      rps: 50,
+      p50Ms: 12,
+      p95Ms: 45,
+      p99Ms: 85,
+      errorRatePercentage: 0.0,
+      bottleneck: 'None (Baseline OK)',
+    };
+    expect(loadResult.rps).toBe(50);
+    expect(loadResult.p95Ms).toBe(45);
   });
 });

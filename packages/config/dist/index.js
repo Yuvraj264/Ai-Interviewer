@@ -38,7 +38,7 @@ var import_zod = require("zod");
 var import_dotenv = __toESM(require("dotenv"));
 import_dotenv.default.config();
 var envSchema = import_zod.z.object({
-  NODE_ENV: import_zod.z.enum(["development", "test", "production"]).default("development"),
+  NODE_ENV: import_zod.z.enum(["development", "test", "staging", "production"]).default("development"),
   PORT: import_zod.z.coerce.number().default(3e3),
   API_PORT: import_zod.z.coerce.number().default(3001),
   DATABASE_URL: import_zod.z.string().default("postgresql://postgres:postgres@localhost:5432/ai_interviewer_dev"),
@@ -56,7 +56,20 @@ function getValidatedEnv(env = process.env) {
     console.error("Invalid environment variables:", result.error.flatten().fieldErrors);
     throw new Error("Environment variable validation failed");
   }
-  return result.data;
+  const parsed = result.data;
+  if (parsed.NODE_ENV === "production") {
+    const missing = [];
+    if (!parsed.DATABASE_URL || parsed.DATABASE_URL.includes("localhost")) missing.push("DATABASE_URL");
+    if (!parsed.LIVEKIT_API_KEY || parsed.LIVEKIT_API_KEY === "devkey") missing.push("LIVEKIT_API_KEY");
+    if (!parsed.LIVEKIT_API_SECRET || parsed.LIVEKIT_API_SECRET === "secret") missing.push("LIVEKIT_API_SECRET");
+    if (!parsed.OPENAI_API_KEY) missing.push("OPENAI_API_KEY");
+    if (missing.length > 0) {
+      const msg = `[Production Hardening] Critical startup check failed: Missing or default credentials for [${missing.join(", ")}] in production environment.`;
+      console.error(msg);
+      throw new Error(msg);
+    }
+  }
+  return parsed;
 }
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
