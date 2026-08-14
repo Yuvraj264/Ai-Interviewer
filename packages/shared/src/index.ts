@@ -31,6 +31,7 @@ export interface InterviewSession {
   completedAt?: string;
   resumeText?: string;
   jobDescriptionText?: string;
+  organizationId?: string;
 }
 
 export type RealtimeConnectionState =
@@ -160,7 +161,7 @@ export interface AdaptiveDecisionRecord {
 }
 
 // Phase 7 Resume & JD Intelligence Types
-export type VerificationStatus = 'UNVERIFIED' | 'PARTIALLY_VERIFIED' | 'SUPPORTED' | 'CONTRADICTED';
+export type VerificationStatus = 'UNVERIFIED' | 'PARTIALLY_VERIFIED' | 'SUPPORTED' | 'CONTRADICTORY';
 export type TargetType =
   | 'VERIFY_RESUME_CLAIM'
   | 'TEST_REQUIRED_SKILL'
@@ -207,6 +208,7 @@ export interface CandidateProfile {
   projects: CandidateProject[];
   skills: CandidateSkill[];
   sourceDocumentId?: string;
+  organizationId?: string;
 }
 
 export interface SkillRequirement {
@@ -227,6 +229,7 @@ export interface JobProfile {
   responsibilities: string[];
   qualifications: string[];
   domains: string[];
+  organizationId?: string;
 }
 
 export interface InterviewTarget {
@@ -276,7 +279,7 @@ export interface EvaluationDimension {
   description: string;
   weight: number;
   required: boolean;
-  score?: number; // 1-5 integer or null if INSUFFICIENT_EVIDENCE
+  score?: number;
   status: 'EVALUATED' | 'INSUFFICIENT_EVIDENCE';
   confidence: number;
   evidence: EvaluationEvidence[];
@@ -323,6 +326,59 @@ export interface HumanReview {
   timestamp: string;
 }
 
+// Phase 9 Recruiter Dashboard & Analytics Types
+export interface DashboardOverviewMetrics {
+  totalInterviews: number;
+  activeInterviews: number;
+  completedInterviews: number;
+  pendingEvaluations: number;
+  interviewsNeedingReview: number;
+  completionRatePercentage: number;
+  averageDurationMinutes: number;
+  averageRequirementCoveragePercentage: number;
+}
+
+export interface AnalyticsData {
+  operational: {
+    startedCount: number;
+    completedCount: number;
+    completionRate: number;
+    avgDurationMinutes: number;
+    avgQuestionCount: number;
+  };
+  aiBehavior: {
+    adaptiveFollowUpRate: number;
+    fallbackRate: number;
+    avgAdaptiveLatencyMs: number;
+    topicDistribution: Record<string, number>;
+  };
+  evaluation: {
+    evaluationCompletionRate: number;
+    insufficientEvidenceRate: number;
+    humanReviewRate: number;
+    avgProcessingTimeMs: number;
+  };
+  requirementCoverage: {
+    mostUntestedRequirements: string[];
+    coverageByJob: Record<string, number>;
+  };
+}
+
+export interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface RecruiterTenantContext {
+  recruiterId: string;
+  recruiterName: string;
+  organizationId: string;
+  role: 'ADMIN' | 'RECRUITER' | 'REVIEWER';
+}
+
 export interface TranscriptItem {
   id: string;
   speaker: 'ai' | 'candidate';
@@ -355,4 +411,4 @@ export interface ApiResponse<T = unknown> {
   timestamp: string;
 }
 
-export const PROJECT_PHASE = 'Phase 8 — Evidence-Based Interview Evaluation' as const;
+export const PROJECT_PHASE = 'Phase 9 — Recruiter Dashboard & Interview Analytics' as const;

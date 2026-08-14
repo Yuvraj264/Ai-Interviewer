@@ -1,4 +1,4 @@
-import { EngineQuestion, InterviewType, InterviewConfig, InterviewEngineState, InterviewStage, AnswerAnalysis, QualityCategory, AdaptiveDecision, AdaptiveDecisionRecord, CandidateProfile, JobProfile, CandidateJobProfile, InterviewTarget, EvaluationDimension, TranscriptItem, InterviewEvaluation, HumanReviewOverride, HumanReview } from '@ai-interviewer/shared';
+import { EngineQuestion, InterviewType, InterviewConfig, InterviewEngineState, InterviewStage, AnswerAnalysis, QualityCategory, AdaptiveDecision, AdaptiveDecisionRecord, CandidateProfile, JobProfile, CandidateJobProfile, InterviewTarget, EvaluationDimension, TranscriptItem, InterviewEvaluation, HumanReviewOverride, HumanReview, InterviewSession, DashboardOverviewMetrics, AnalyticsData } from '@ai-interviewer/shared';
 
 interface InterviewerPromptContext {
     candidateName?: string;
@@ -196,6 +196,11 @@ declare class HumanReviewService {
     applyHumanReview(evaluation: InterviewEvaluation, review: HumanReview): InterviewEvaluation;
 }
 
+declare class AnalyticsService {
+    calculateOverviewMetrics(sessions: InterviewSession[], evaluations: Map<string, InterviewEvaluation>, organizationId?: string): DashboardOverviewMetrics;
+    calculateAnalyticsData(sessions: InterviewSession[], evaluations: Map<string, InterviewEvaluation>, adaptiveRecords: AdaptiveDecisionRecord[], organizationId?: string): AnalyticsData;
+}
+
 interface InterviewInteractionProvider {
     start(): Promise<void>;
     submitCandidateResponse(response: string): Promise<void>;
@@ -236,4 +241,4 @@ declare class MockInterviewer implements InterviewInteractionProvider {
     private notifyState;
 }
 
-export { ADAPTIVE_DECISION_VERSION, ANSWER_ANALYSIS_VERSION, AdaptiveDecisionMaker, type AdaptiveEngineResult, AdaptiveQuestionSelector, AdaptiveQuestioningEngine, type AnalyzerOptions, AnswerAnalyzer, BACKEND_ENGINEER_RUBRIC_V1, type BoundedInterviewContext, CandidateJobMatcher, DEFAULT_TECHNICAL_RUBRIC_V1, DeterministicFallbackHandler, EVALUATION_ENGINE_VERSION, EVALUATION_PROMPT_VERSION, type EvaluationInput, EvaluationRubric, EvidenceEvaluator, type FallbackReason, HumanReviewService, InterviewAlreadyCompletedError, InterviewContextBuilder, InterviewEngine, type InterviewInteractionProvider, type InterviewerPromptContext, InvalidTransitionError, JD_PARSER_VERSION, JobDescriptionParser, MockInterviewer, type MockInterviewerState, QUESTION_BANK, QuestionBudgetExceededError, type QuestionSelectorOptions, RESUME_PARSER_VERSION, ResumeParser, type RubricDefinition, SessionNotFoundError, SkillNormalizer, buildInterviewerInstructions, getQuestionsForType };
+export { ADAPTIVE_DECISION_VERSION, ANSWER_ANALYSIS_VERSION, AdaptiveDecisionMaker, type AdaptiveEngineResult, AdaptiveQuestionSelector, AdaptiveQuestioningEngine, AnalyticsService, type AnalyzerOptions, AnswerAnalyzer, BACKEND_ENGINEER_RUBRIC_V1, type BoundedInterviewContext, CandidateJobMatcher, DEFAULT_TECHNICAL_RUBRIC_V1, DeterministicFallbackHandler, EVALUATION_ENGINE_VERSION, EVALUATION_PROMPT_VERSION, type EvaluationInput, EvaluationRubric, EvidenceEvaluator, type FallbackReason, HumanReviewService, InterviewAlreadyCompletedError, InterviewContextBuilder, InterviewEngine, type InterviewInteractionProvider, type InterviewerPromptContext, InvalidTransitionError, JD_PARSER_VERSION, JobDescriptionParser, MockInterviewer, type MockInterviewerState, QUESTION_BANK, QuestionBudgetExceededError, type QuestionSelectorOptions, RESUME_PARSER_VERSION, ResumeParser, type RubricDefinition, SessionNotFoundError, SkillNormalizer, buildInterviewerInstructions, getQuestionsForType };

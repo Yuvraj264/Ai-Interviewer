@@ -209,6 +209,30 @@ export class InterviewsService {
     return { evaluation: updatedEval, review };
   }
 
+  public getAllSessions(): InterviewSession[] {
+    return Array.from(this.sessions.values());
+  }
+
+  public getAllEvaluations(): Map<string, InterviewEvaluation> {
+    return new Map(this.evaluations);
+  }
+
+  public getAllCandidateProfiles(): CandidateProfile[] {
+    return Array.from(this.candidateProfiles.values());
+  }
+
+  public getAllJobProfiles(): JobProfile[] {
+    return Array.from(this.jobProfiles.values());
+  }
+
+  public getMatchesForCandidate(candidateId: string): CandidateJobProfile[] {
+    return Array.from(this.matches.values()).filter((m) => m.candidateId === candidateId);
+  }
+
+  public getAllAdaptiveRecords() {
+    return [];
+  }
+
   private recalculateMatch(sessionId: string): CandidateJobProfile {
     const session = this.getSession(sessionId);
     const cand = this.candidateProfiles.get(sessionId) || this.parseResume(sessionId, session.resumeText || `Name: ${session.candidateName}`);

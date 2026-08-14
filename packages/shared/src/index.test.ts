@@ -1,73 +1,57 @@
 import { describe, it, expect } from 'vitest';
 import {
   PROJECT_PHASE,
-  InterviewStage,
-  InterviewEvaluation,
-  EvaluationDimension,
+  DashboardOverviewMetrics,
+  AnalyticsData,
 } from './index';
 
-describe('Shared Package Phase 8 Evaluation Contracts', () => {
+describe('Shared Package Phase 9 Dashboard & Analytics Contracts', () => {
   it('should define the correct current project phase', () => {
-    expect(PROJECT_PHASE).toBe('Phase 8 — Evidence-Based Interview Evaluation');
+    expect(PROJECT_PHASE).toBe('Phase 9 — Recruiter Dashboard & Interview Analytics');
   });
 
-  it('should support valid interview stages including COMPLETED', () => {
-    const stage: InterviewStage = 'COMPLETED';
-    expect(stage).toBe('COMPLETED');
-  });
-
-  it('should validate structured InterviewEvaluation schema', () => {
-    const dimension: EvaluationDimension = {
-      dimensionId: 'technical-knowledge',
-      name: 'Technical Knowledge',
-      description: 'Understanding of core concepts and design tradeoffs.',
-      weight: 25,
-      required: true,
-      score: 4,
-      status: 'EVALUATED',
-      confidence: 0.9,
-      evidence: [
-        {
-          id: 'ev_01',
-          questionId: 'q_tech_rest_01',
-          answerId: 'ans_01',
-          dimensionId: 'technical-knowledge',
-          evidenceType: 'DIRECT',
-          summary: 'Candidate explained database indexing and tradeoffs.',
-          transcriptReference: 'q_tech_rest_01',
-          confidence: 0.9,
-        },
-      ],
-      limitations: [],
+  it('should support DashboardOverviewMetrics and AnalyticsData structures', () => {
+    const metrics: DashboardOverviewMetrics = {
+      totalInterviews: 10,
+      activeInterviews: 2,
+      completedInterviews: 8,
+      pendingEvaluations: 1,
+      interviewsNeedingReview: 2,
+      completionRatePercentage: 80.0,
+      averageDurationMinutes: 18.5,
+      averageRequirementCoveragePercentage: 85.0,
     };
 
-    const evalResult: InterviewEvaluation = {
-      evaluationId: 'eval_123',
-      interviewId: 'sess_123',
-      status: 'COMPLETED',
-      evaluatedDimensions: [dimension],
-      requirementEvaluations: [
-        {
-          skillOrRequirement: 'PostgreSQL',
-          status: 'SUPPORTED',
-          evidenceSummary: 'Candidate explained database indexing.',
-          supportingQuestions: ['q_tech_rest_01'],
-          confidence: 0.9,
-        },
-      ],
-      evaluationCoverage: {
-        totalDimensions: 4,
-        evaluatedDimensionsCount: 1,
-        isComplete: false,
+    expect(metrics.totalInterviews).toBe(10);
+    expect(metrics.completionRatePercentage).toBe(80.0);
+
+    const analytics: AnalyticsData = {
+      operational: {
+        startedCount: 10,
+        completedCount: 8,
+        completionRate: 80.0,
+        avgDurationMinutes: 18.5,
+        avgQuestionCount: 5.2,
       },
-      rubricVersion: 'BACKEND_ENGINEER_RUBRIC_V1',
-      promptVersion: 'EVALUATION_PROMPT_V1',
-      modelVersion: 'EVALUATION_ENGINE_V1',
-      timestamp: new Date().toISOString(),
+      aiBehavior: {
+        adaptiveFollowUpRate: 35.0,
+        fallbackRate: 2.5,
+        avgAdaptiveLatencyMs: 45,
+        topicDistribution: { Technical: 60, SystemDesign: 40 },
+      },
+      evaluation: {
+        evaluationCompletionRate: 100.0,
+        insufficientEvidenceRate: 10.0,
+        humanReviewRate: 25.0,
+        avgProcessingTimeMs: 120,
+      },
+      requirementCoverage: {
+        mostUntestedRequirements: ['Kubernetes'],
+        coverageByJob: { 'Backend Engineer': 85.0 },
+      },
     };
 
-    expect(evalResult.evaluationId).toBe('eval_123');
-    expect(evalResult.evaluatedDimensions[0].score).toBe(4);
-    expect(evalResult.requirementEvaluations[0].status).toBe('SUPPORTED');
+    expect(analytics.operational.completionRate).toBe(80.0);
+    expect(analytics.aiBehavior.fallbackRate).toBe(2.5);
   });
 });

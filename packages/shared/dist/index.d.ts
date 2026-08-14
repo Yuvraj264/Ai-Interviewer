@@ -34,6 +34,7 @@ interface InterviewSession {
     completedAt?: string;
     resumeText?: string;
     jobDescriptionText?: string;
+    organizationId?: string;
 }
 type RealtimeConnectionState = 'DISCONNECTED' | 'CONNECTING' | 'CONNECTED' | 'RECONNECTING' | 'FAILED';
 type MicrophoneState = 'IDLE' | 'REQUESTING' | 'ACTIVE' | 'DENIED' | 'ERROR';
@@ -109,7 +110,7 @@ interface AdaptiveDecisionRecord {
     validationResult: 'ACCEPTED' | 'FALLBACK_USED';
     timestamp: string;
 }
-type VerificationStatus = 'UNVERIFIED' | 'PARTIALLY_VERIFIED' | 'SUPPORTED' | 'CONTRADICTED';
+type VerificationStatus = 'UNVERIFIED' | 'PARTIALLY_VERIFIED' | 'SUPPORTED' | 'CONTRADICTORY';
 type TargetType = 'VERIFY_RESUME_CLAIM' | 'TEST_REQUIRED_SKILL' | 'DEEP_DIVE_PROJECT' | 'EXPLORE_GAP' | 'VERIFY_EXPERIENCE' | 'BEHAVIORAL';
 type TargetStatus = 'PENDING' | 'IN_PROGRESS' | 'SUFFICIENTLY_VERIFIED' | 'INSUFFICIENT_EVIDENCE' | 'SKIPPED';
 type DocumentProcessingStatus = 'NOT_PROCESSED' | 'PROCESSING' | 'READY' | 'FAILED';
@@ -150,6 +151,7 @@ interface CandidateProfile {
     projects: CandidateProject[];
     skills: CandidateSkill[];
     sourceDocumentId?: string;
+    organizationId?: string;
 }
 interface SkillRequirement {
     skill: string;
@@ -168,6 +170,7 @@ interface JobProfile {
     responsibilities: string[];
     qualifications: string[];
     domains: string[];
+    organizationId?: string;
 }
 interface InterviewTarget {
     id: string;
@@ -248,6 +251,54 @@ interface HumanReview {
     overallDecisionNote?: string;
     timestamp: string;
 }
+interface DashboardOverviewMetrics {
+    totalInterviews: number;
+    activeInterviews: number;
+    completedInterviews: number;
+    pendingEvaluations: number;
+    interviewsNeedingReview: number;
+    completionRatePercentage: number;
+    averageDurationMinutes: number;
+    averageRequirementCoveragePercentage: number;
+}
+interface AnalyticsData {
+    operational: {
+        startedCount: number;
+        completedCount: number;
+        completionRate: number;
+        avgDurationMinutes: number;
+        avgQuestionCount: number;
+    };
+    aiBehavior: {
+        adaptiveFollowUpRate: number;
+        fallbackRate: number;
+        avgAdaptiveLatencyMs: number;
+        topicDistribution: Record<string, number>;
+    };
+    evaluation: {
+        evaluationCompletionRate: number;
+        insufficientEvidenceRate: number;
+        humanReviewRate: number;
+        avgProcessingTimeMs: number;
+    };
+    requirementCoverage: {
+        mostUntestedRequirements: string[];
+        coverageByJob: Record<string, number>;
+    };
+}
+interface PaginatedResponse<T> {
+    items: T[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+}
+interface RecruiterTenantContext {
+    recruiterId: string;
+    recruiterName: string;
+    organizationId: string;
+    role: 'ADMIN' | 'RECRUITER' | 'REVIEWER';
+}
 interface TranscriptItem {
     id: string;
     speaker: 'ai' | 'candidate';
@@ -276,6 +327,6 @@ interface ApiResponse<T = unknown> {
     };
     timestamp: string;
 }
-declare const PROJECT_PHASE: "Phase 8 \u2014 Evidence-Based Interview Evaluation";
+declare const PROJECT_PHASE: "Phase 9 \u2014 Recruiter Dashboard & Interview Analytics";
 
-export { type AdaptiveAction, type AdaptiveDecision, type AdaptiveDecisionRecord, type AiConversationState, type AnswerAnalysis, type ApiResponse, type CandidateExperience, type CandidateJobProfile, type CandidateProfile, type CandidateProject, type CandidateSkill, type CreateSessionDto, type DocumentProcessingStatus, type EngineEventType, type EngineQuestion, type EngineQuestionState, type EvaluationDimension, type EvaluationEvidence, type EvaluationStatus, type EvidenceItem, type EvidenceType, type HumanReview, type HumanReviewOverride, type InterviewConfig, type InterviewEngineState, type InterviewEvaluation, type InterviewSession, type InterviewStage, type InterviewTarget, type InterviewType, type JobProfile, type MicrophoneState, PROJECT_PHASE, type QualityCategory, type RealtimeConnectionState, type RealtimeTokenResponse, type RequirementCoverageStatus, type RequirementEvaluation, type SessionStatus, type SkillRequirement, type SystemHealth, type TargetStatus, type TargetType, type TranscriptItem, type VerificationStatus, createSessionSchema };
+export { type AdaptiveAction, type AdaptiveDecision, type AdaptiveDecisionRecord, type AiConversationState, type AnalyticsData, type AnswerAnalysis, type ApiResponse, type CandidateExperience, type CandidateJobProfile, type CandidateProfile, type CandidateProject, type CandidateSkill, type CreateSessionDto, type DashboardOverviewMetrics, type DocumentProcessingStatus, type EngineEventType, type EngineQuestion, type EngineQuestionState, type EvaluationDimension, type EvaluationEvidence, type EvaluationStatus, type EvidenceItem, type EvidenceType, type HumanReview, type HumanReviewOverride, type InterviewConfig, type InterviewEngineState, type InterviewEvaluation, type InterviewSession, type InterviewStage, type InterviewTarget, type InterviewType, type JobProfile, type MicrophoneState, PROJECT_PHASE, type PaginatedResponse, type QualityCategory, type RealtimeConnectionState, type RealtimeTokenResponse, type RecruiterTenantContext, type RequirementCoverageStatus, type RequirementEvaluation, type SessionStatus, type SkillRequirement, type SystemHealth, type TargetStatus, type TargetType, type TranscriptItem, type VerificationStatus, createSessionSchema };

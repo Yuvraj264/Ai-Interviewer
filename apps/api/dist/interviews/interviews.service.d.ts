@@ -47,6 +47,12 @@ export declare class InterviewsService {
         evaluation: InterviewEvaluation;
         review: HumanReview;
     };
+    getAllSessions(): InterviewSession[];
+    getAllEvaluations(): Map<string, InterviewEvaluation>;
+    getAllCandidateProfiles(): CandidateProfile[];
+    getAllJobProfiles(): JobProfile[];
+    getMatchesForCandidate(candidateId: string): CandidateJobProfile[];
+    getAllAdaptiveRecords(): never[];
     private recalculateMatch;
 }
 //# sourceMappingURL=interviews.service.d.ts.map

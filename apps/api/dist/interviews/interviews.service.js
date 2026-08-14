@@ -149,6 +149,24 @@ let InterviewsService = class InterviewsService {
         this.evaluations.set(sessionId, updatedEval);
         return { evaluation: updatedEval, review };
     }
+    getAllSessions() {
+        return Array.from(this.sessions.values());
+    }
+    getAllEvaluations() {
+        return new Map(this.evaluations);
+    }
+    getAllCandidateProfiles() {
+        return Array.from(this.candidateProfiles.values());
+    }
+    getAllJobProfiles() {
+        return Array.from(this.jobProfiles.values());
+    }
+    getMatchesForCandidate(candidateId) {
+        return Array.from(this.matches.values()).filter((m) => m.candidateId === candidateId);
+    }
+    getAllAdaptiveRecords() {
+        return [];
+    }
     recalculateMatch(sessionId) {
         const session = this.getSession(sessionId);
         const cand = this.candidateProfiles.get(sessionId) || this.parseResume(sessionId, session.resumeText || `Name: ${session.candidateName}`);

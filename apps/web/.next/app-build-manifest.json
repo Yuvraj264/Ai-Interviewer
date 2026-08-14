@@ -21,14 +21,23 @@
       "static/chunks/526-2b659c592ef689d1.js",
       "static/chunks/main-app-944cad8e193352cc.js",
       "static/chunks/e1d51c76-afecff23e7c6ffcf.js",
-      "static/chunks/app/interview/[sessionId]/page-058df78376d3a9e8.js"
+      "static/chunks/315-031f53291f3f6c34.js",
+      "static/chunks/app/interview/[sessionId]/page-2feb4edc23620035.js"
+    ],
+    "/recruiter/page": [
+      "static/chunks/webpack-e236eb22fecbfdff.js",
+      "static/chunks/0a8b1846-209b8d7cce1b0bd5.js",
+      "static/chunks/526-2b659c592ef689d1.js",
+      "static/chunks/main-app-944cad8e193352cc.js",
+      "static/chunks/315-031f53291f3f6c34.js",
+      "static/chunks/app/recruiter/page-682c7dc054a9df35.js"
     ],
     "/page": [
       "static/chunks/webpack-e236eb22fecbfdff.js",
       "static/chunks/0a8b1846-209b8d7cce1b0bd5.js",
       "static/chunks/526-2b659c592ef689d1.js",
       "static/chunks/main-app-944cad8e193352cc.js",
-      "static/chunks/app/page-a175ee05740f6559.js"
+      "static/chunks/app/page-968c0c0000783ce7.js"
     ]
   }
 }

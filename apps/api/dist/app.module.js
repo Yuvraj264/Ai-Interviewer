@@ -12,14 +12,16 @@ const health_controller_1 = require("./health/health.controller");
 const interviews_controller_1 = require("./interviews/interviews.controller");
 const interviews_service_1 = require("./interviews/interviews.service");
 const realtime_service_1 = require("./interviews/realtime.service");
+const dashboard_controller_1 = require("./dashboard/dashboard.controller");
+const dashboard_service_1 = require("./dashboard/dashboard.service");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
         imports: [],
-        controllers: [health_controller_1.HealthController, interviews_controller_1.InterviewsController],
-        providers: [interviews_service_1.InterviewsService, realtime_service_1.RealtimeService],
+        controllers: [health_controller_1.HealthController, interviews_controller_1.InterviewsController, dashboard_controller_1.DashboardController],
+        providers: [interviews_service_1.InterviewsService, realtime_service_1.RealtimeService, dashboard_service_1.DashboardService],
     })
 ], AppModule);
 //# sourceMappingURL=app.module.js.map

@@ -4,23 +4,20 @@ Production-oriented AI Voice Interviewer platform designed to conduct interactiv
 
 ---
 
-## Current Status: Phase 8 — Evidence-Based Interview Evaluation
+## Current Status: Phase 9 — Recruiter Dashboard & Interview Analytics
 
-The repository is currently at **Phase 8 (Evidence-Based Interview Evaluation)**. The system features a post-interview evidence evaluation engine (`@ai-interviewer/interview-engine/evaluation`) that evaluates observable transcript evidence against configurable role rubrics (`BACKEND_ENGINEER_RUBRIC_V1`), enforces **NO EVIDENCE = NO SCORE**, maps job requirement coverage (`SUPPORTED`, `PARTIALLY_TESTED`, `NOT_TESTED`), and supports human reviewer overrides with immutable audit trails. **The system is strictly an Interview Evaluation Assistant—it NEVER generates autonomous hiring decisions (`HIRE`/`REJECT`)**.
+The repository is currently at **Phase 9 (Recruiter Dashboard & Interview Analytics)**. The system features a recruiter-facing **Recruiter Intelligence Workspace** (`/recruiter`) supported by server-side analytics (`AnalyticsService`) and REST API endpoints (`DashboardController`). Recruiters can view operational metrics, search candidates, inspect experience claim verifications, navigate turn-by-turn transcripts, explore visual adaptive flow diagrams, inspect observable evidence with click-to-transcript drill-down, and perform human review overrides. **The system is strictly an Interview Intelligence Workspace—it NEVER generates autonomous hiring decisions (`HIRE`/`REJECT`) or candidate rankings**.
 
 ---
 
-## System Architecture (Phase 8)
+## System Architecture (Phase 9)
 
 ```text
-Completed Interview Transcript ──► EvidenceEvaluator (EVALUATION_ENGINE_V1) ──┐
-                                                                              ├──► HumanReviewService
-Job Profile Requirements ─────────► Requirement Coverage Mapping ─────────────┘          │
-                                                                                         ▼
-                                                                             Structured Assessment Report
-                                                                                         │
-                                                                                         ▼
-                                                                            Human Reviewer Sign-Off
+Dashboard REST Endpoints (DashboardController) ──► AnalyticsService ──┐
+                                                                       ├──► Recruiter Intelligence Workspace (/recruiter)
+Interview Sessions & Evaluations ─────────────────► Server Aggregation ┘          │
+                                                                                  ▼
+                                                                      Overview / Candidates / Interviews / Analytics
 ```
 
 ---
@@ -40,6 +37,13 @@ Job Profile Requirements ─────────► Requirement Coverage Map
 - `POST /interviews/:id/evaluate`: Trigger evidence-based post-interview evaluation
 - `GET  /interviews/:id/evaluation`: Retrieve structured evaluation and requirement coverage
 - `POST /interviews/:id/evaluation/review`: Submit human reviewer overrides and audit notes
+- `GET  /dashboard/overview`: Fetch operational overview metrics
+- `GET  /dashboard/candidates`: Paginated candidate directory with search & claim badges
+- `GET  /dashboard/candidates/:id`: Candidate detail with job matches
+- `GET  /dashboard/interviews`: Paginated interview list with status filter
+- `GET  /dashboard/interviews/:id`: Detailed interview workspace data
+- `GET  /dashboard/jobs`: Job description listings
+- `GET  /dashboard/analytics`: Operational, AI behavior, evaluation, and requirement analytics
 
 ---
 
@@ -72,7 +76,7 @@ pnpm build
 
 ---
 
-## What Has NOT Been Implemented Yet (Intentionally Excluded in Phase 8)
+## What Has NOT Been Implemented Yet (Intentionally Excluded in Phase 9)
 
-- Recruiter analytics dashboard & candidate comparison (Phase 9)
-- Cheating detection
+- Production load testing & multi-region deployment manifests (Phase 10)
+- ATS / HRIS candidate auto-export
