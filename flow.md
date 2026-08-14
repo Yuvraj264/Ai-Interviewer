@@ -11,102 +11,91 @@
 ### Phase 2 — Candidate Interview Shell
 **Status**: COMPLETED
 
-### Phase 3 — Realtime Audio & LiveKit Integration
-**Status**: NOT STARTED
+### Phase 3 — Realtime Audio Foundation
+**Status**: COMPLETED
 
 ### Phase 4 — Adaptive Interview Logic & Scoring
 **Status**: NOT STARTED
 
 ---
 
-## Phase 2 Implementation Log
+## Phase 3 Implementation Log
 
-### Phase 2 Entry Point
+### Phase 3 Entry Point
 ```text
-Phase 1 verified
- ↓
-Monorepo foundation exists
- ↓
-Phase 2 begins
+Phase 2 completed
+       ↓
+Candidate interview session exists
+       ↓
+Realtime transport introduced
 ```
 
-### Phase 2 Workflow
+### Phase 3 Realtime Workflow
 
 ```text
-Landing
- ↓
-Setup Form
- ↓
-Client & Server Validation
- ↓
-Create Session (POST /interviews)
- ↓
-Waiting Room
- ↓
-Start Session (POST /interviews/:id/start)
- ↓
-Interview Shell (Mock Engine Q&A)
- ↓
-Session Recovery (GET /interviews/:id)
- ↓
-End Interview Dialog
- ↓
-Complete Session (POST /interviews/:id/end)
- ↓
-Completion Screen
+Interview Session Started (IN_PROGRESS)
+       ↓
+Request realtime token (POST /interviews/:id/realtime/token)
+       ↓
+Backend validates session & generates short-lived JWT token
+       ↓
+Browser receives token & requests microphone permission
+       ↓
+Browser connects to LiveKit Room (interview:{sessionId})
+       ↓
+Browser publishes local microphone audio track
+       ↓
+Agent Participant (agent-{sessionId}) connects & joins room
+       ↓
+Realtime WebRTC connection established (Connected)
+       ↓
+Candidate can end interview / reconnect on network glitch
 ```
 
-### API Entry Points Implemented
-- `POST /interviews`: Validates `CreateSessionDto` and creates a new interview session.
-- `GET /interviews/:id`: Retrieves authoritative session state by ID.
-- `POST /interviews/:id/start`: Transitions session status from `CREATED`/`WAITING` to `IN_PROGRESS` and records `startedAt`.
-- `POST /interviews/:id/end`: Transitions session status to `COMPLETED` and records `completedAt`.
+### Backend Entry Points Implemented
+- `POST /interviews/:id/realtime/token`: Generates LiveKit participant JWT tokens with short TTL (30 mins) and least-privilege grants (`roomJoin`, `canPublish`, `canSubscribe`).
 
-### Frontend Entry Points & Components
-- `/` (`HomePage`): Renders `LandingView` and `SetupForm`.
-- `/interview/[sessionId]` (`InterviewSessionPage`): Manages session lifecycle & session recovery.
-  - `LandingView`: Initial introduction screen.
-  - `SetupForm`: Validated candidate details form.
-  - `WaitingRoom`: Pre-interview review screen.
-  - `InterviewShell`: Core interview UI with mock question sequence, candidate response actions, and progress bar.
-  - `SessionTimer`: Server-timestamp-synced countdown timer.
-  - `EndInterviewDialog`: Modal confirmation for early/final interview conclusion.
-  - `CompletionScreen`: Final interview conclusion notice.
-  - `ErrorMessage`: Network/session error card with recovery options.
+### Frontend Entry Points & Hooks
+- `useRealtimeAudio`: Manages LiveKit room connection, microphone permission (`getUserMedia`), track publication, connection state (`DISCONNECTED` | `CONNECTING` | `CONNECTED` | `RECONNECTING` | `FAILED`), agent presence, and device error handling.
+- `InterviewShell`: Displays realtime connection status badge, microphone status, agent presence indicator, and error fallback card.
 
-### State Transitions Supported
-- `CREATED` / `WAITING` -> `IN_PROGRESS` -> `COMPLETED`
+### Realtime Events & Logs
+- `realtime.token.created`: Generated short-lived JWT token for room `interview:{sessionId}`.
+- `realtime.connection.connected`: LiveKit WebRTC room connection established.
+- `realtime.connection.reconnecting`: Automatic connection recovery in progress.
+- `realtime.microphone.enabled`: Published local microphone audio track.
+- `realtime.agent.joined`: Agent participant (`agent-{sessionId}`) joined room.
+- `realtime.agent.left`: Agent participant disconnected cleanly.
 
-### Phase 2 Exit Point
-A complete candidate interview flow is fully operational end-to-end:
-- Candidate can create, start, refresh/recover, answer mock questions, and complete an interview session.
-- All UI presentation logic is decoupled from interviewer logic via `InterviewInteractionProvider` / `MockInterviewer`.
-- No realtime audio, WebRTC, LiveKit, or OpenAI APIs are required for Phase 2.
-- Clean contract boundary is ready for Phase 3 Realtime Audio integration.
+### Phase 3 Exit Point
+A robust WebRTC audio transport foundation is operational end-to-end:
+- Candidate browser requests microphone permission and connects directly to LiveKit Room `interview:{sessionId}`.
+- Backend handles JWT token authorization without exposing API secrets (`LIVEKIT_API_KEY`/`LIVEKIT_API_SECRET`) to the frontend.
+- LiveKit Agent worker connects as participant `agent-{sessionId}`.
+- Zero AI model calls, STT, or TTS are executed in Phase 3. The transport layer is validated and decoupled for Phase 4.
 
-### Files Added/Modified in Phase 2
-- `packages/shared/src/session.schema.ts`
+### Files Added/Modified in Phase 3
+- `packages/config/src/index.ts`
+- `packages/config/src/index.test.ts`
 - `packages/shared/src/index.ts`
 - `packages/shared/src/index.test.ts`
-- `packages/interview-engine/src/index.ts`
-- `packages/interview-engine/src/index.test.ts`
-- `apps/api/src/interviews/interviews.service.ts`
+- `apps/api/package.json`
+- `apps/api/src/interviews/realtime.service.ts`
+- `apps/api/src/interviews/realtime.service.spec.ts`
 - `apps/api/src/interviews/interviews.controller.ts`
 - `apps/api/src/interviews/interviews.controller.spec.ts`
 - `apps/api/src/app.module.ts`
+- `apps/agent/package.json`
+- `apps/agent/src/index.ts`
+- `apps/agent/src/index.spec.ts`
+- `apps/web/package.json`
 - `apps/web/src/lib/api-client.ts`
-- `apps/web/src/components/LandingView.tsx`
-- `apps/web/src/components/SetupForm.tsx`
-- `apps/web/src/components/WaitingRoom.tsx`
-- `apps/web/src/components/SessionTimer.tsx`
+- `apps/web/src/hooks/useRealtimeAudio.ts`
 - `apps/web/src/components/InterviewShell.tsx`
-- `apps/web/src/components/EndInterviewDialog.tsx`
-- `apps/web/src/components/CompletionScreen.tsx`
-- `apps/web/src/components/ErrorMessage.tsx`
-- `apps/web/src/app/globals.css`
-- `apps/web/src/app/page.tsx`
-- `apps/web/src/app/interview/[sessionId]/page.tsx`
 - `apps/web/src/app/page.test.tsx`
+- `flow.md`
+- `context.md`
+- `README.md`
 
 ### Verification Summary
 - `pnpm lint`: PASS

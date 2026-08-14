@@ -13,7 +13,8 @@
   },
   "dependencies": {
     "@ai-interviewer/config": "workspace:*",
-    "@ai-interviewer/shared": "workspace:*"
+    "@ai-interviewer/shared": "workspace:*",
+    "livekit-client": "^2.1.3"
   },
   "devDependencies": {
     "@types/node": "^20.12.12",

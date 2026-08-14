@@ -11,6 +11,7 @@ const common_1 = require("@nestjs/common");
 const health_controller_1 = require("./health/health.controller");
 const interviews_controller_1 = require("./interviews/interviews.controller");
 const interviews_service_1 = require("./interviews/interviews.service");
+const realtime_service_1 = require("./interviews/realtime.service");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -18,7 +19,7 @@ exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
         imports: [],
         controllers: [health_controller_1.HealthController, interviews_controller_1.InterviewsController],
-        providers: [interviews_service_1.InterviewsService],
+        providers: [interviews_service_1.InterviewsService, realtime_service_1.RealtimeService],
     })
 ], AppModule);
 //# sourceMappingURL=app.module.js.map

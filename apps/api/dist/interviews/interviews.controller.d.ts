@@ -1,8 +1,10 @@
 import { InterviewsService } from './interviews.service';
-import { CreateSessionDto, InterviewSession, ApiResponse } from '@ai-interviewer/shared';
+import { RealtimeService } from './realtime.service';
+import { CreateSessionDto, InterviewSession, RealtimeTokenResponse, ApiResponse } from '@ai-interviewer/shared';
 export declare class InterviewsController {
     private readonly interviewsService;
-    constructor(interviewsService: InterviewsService);
+    private readonly realtimeService;
+    constructor(interviewsService: InterviewsService, realtimeService: RealtimeService);
     createSession(dto: CreateSessionDto): ApiResponse<{
         session: InterviewSession;
     }>;
@@ -15,5 +17,6 @@ export declare class InterviewsController {
     endSession(id: string): ApiResponse<{
         session: InterviewSession;
     }>;
+    getRealtimeToken(id: string): Promise<ApiResponse<RealtimeTokenResponse>>;
 }
 //# sourceMappingURL=interviews.controller.d.ts.map

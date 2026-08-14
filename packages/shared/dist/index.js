@@ -4074,7 +4074,7 @@ var createSessionSchema = external_exports.object({
 });
 
 // src/index.ts
-var PROJECT_PHASE = "Phase 2 \u2014 Candidate Interview Shell";
+var PROJECT_PHASE = "Phase 3 \u2014 Realtime Audio Foundation";
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   PROJECT_PHASE,

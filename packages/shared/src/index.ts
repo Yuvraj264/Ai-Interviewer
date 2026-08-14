@@ -17,6 +17,22 @@ export interface InterviewSession {
   completedAt?: string;
 }
 
+export type RealtimeConnectionState =
+  | 'DISCONNECTED'
+  | 'CONNECTING'
+  | 'CONNECTED'
+  | 'RECONNECTING'
+  | 'FAILED';
+
+export type MicrophoneState = 'IDLE' | 'REQUESTING' | 'ACTIVE' | 'DENIED' | 'ERROR';
+
+export interface RealtimeTokenResponse {
+  token: string;
+  url: string;
+  roomName: string;
+  participantIdentity: string;
+}
+
 export interface SystemHealth {
   status: 'ok' | 'degraded' | 'down';
   timestamp: string;
@@ -35,4 +51,4 @@ export interface ApiResponse<T = unknown> {
   timestamp: string;
 }
 
-export const PROJECT_PHASE = 'Phase 2 — Candidate Interview Shell' as const;
+export const PROJECT_PHASE = 'Phase 3 — Realtime Audio Foundation' as const;

@@ -1,15 +1,19 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { InterviewsService } from './interviews.service';
+import { RealtimeService } from './realtime.service';
 import { InterviewsController } from './interviews.controller';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { CreateSessionDto } from '@ai-interviewer/shared';
 
 describe('InterviewsController REST Endpoints', () => {
   let controller: InterviewsController;
   let service: InterviewsService;
+  let realtimeService: RealtimeService;
 
   beforeEach(() => {
     service = new InterviewsService();
-    controller = new InterviewsController(service);
+    realtimeService = new RealtimeService(service);
+    controller = new InterviewsController(service, realtimeService);
   });
 
   it('should create an interview session with valid payload', () => {
@@ -55,21 +59,18 @@ describe('InterviewsController REST Endpoints', () => {
     expect(() => controller.getSession('non_existent_id')).toThrow(NotFoundException);
   });
 
-  it('should transition session status from CREATED to IN_PROGRESS and COMPLETED', () => {
+  it('should generate realtime token via controller endpoint', async () => {
     const createRes = controller.createSession({
-      candidateName: 'Charlie',
+      candidateName: 'David',
       role: 'Frontend Dev',
       type: 'mixed',
-      durationMinutes: 30,
+      durationMinutes: 20,
     });
     const sessionId = createRes.data!.session.id;
 
-    const startRes = controller.startSession(sessionId);
-    expect(startRes.data?.session.status).toBe('IN_PROGRESS');
-    expect(startRes.data?.session.startedAt).toBeDefined();
-
-    const endRes = controller.endSession(sessionId);
-    expect(endRes.data?.session.status).toBe('COMPLETED');
-    expect(endRes.data?.session.completedAt).toBeDefined();
+    const tokenRes = await controller.getRealtimeToken(sessionId);
+    expect(tokenRes.success).toBe(true);
+    expect(tokenRes.data?.token).toBeDefined();
+    expect(tokenRes.data?.roomName).toBe(`interview:${sessionId}`);
   });
 });

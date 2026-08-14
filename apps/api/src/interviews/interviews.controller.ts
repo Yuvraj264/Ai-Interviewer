@@ -1,10 +1,14 @@
 import { Controller, Post, Get, Body, Param, HttpCode, HttpStatus } from '@nestjs/common';
 import { InterviewsService } from './interviews.service';
-import { CreateSessionDto, InterviewSession, ApiResponse } from '@ai-interviewer/shared';
+import { RealtimeService } from './realtime.service';
+import { CreateSessionDto, InterviewSession, RealtimeTokenResponse, ApiResponse } from '@ai-interviewer/shared';
 
 @Controller('interviews')
 export class InterviewsController {
-  constructor(private readonly interviewsService: InterviewsService) {}
+  constructor(
+    private readonly interviewsService: InterviewsService,
+    private readonly realtimeService: RealtimeService,
+  ) {}
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
@@ -45,6 +49,17 @@ export class InterviewsController {
     return {
       success: true,
       data: { session },
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  @Post(':id/realtime/token')
+  @HttpCode(HttpStatus.OK)
+  async getRealtimeToken(@Param('id') id: string): Promise<ApiResponse<RealtimeTokenResponse>> {
+    const realtimeData = await this.realtimeService.generateCandidateToken(id);
+    return {
+      success: true,
+      data: realtimeData,
       timestamp: new Date().toISOString(),
     };
   }

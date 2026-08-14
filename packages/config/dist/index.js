@@ -42,7 +42,10 @@ var envSchema = import_zod.z.object({
   PORT: import_zod.z.coerce.number().default(3e3),
   API_PORT: import_zod.z.coerce.number().default(3001),
   DATABASE_URL: import_zod.z.string().default("postgresql://postgres:postgres@localhost:5432/ai_interviewer_dev"),
-  VALKEY_URL: import_zod.z.string().default("redis://localhost:6379")
+  VALKEY_URL: import_zod.z.string().default("redis://localhost:6379"),
+  LIVEKIT_URL: import_zod.z.string().default("ws://localhost:7880"),
+  LIVEKIT_API_KEY: import_zod.z.string().default("devkey"),
+  LIVEKIT_API_SECRET: import_zod.z.string().default("secret")
 });
 function getValidatedEnv(env = process.env) {
   const result = envSchema.safeParse(env);

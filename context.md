@@ -9,11 +9,11 @@ The AI Interviewer platform is a production-oriented system for conducting real-
 
 ### What Was Built
 1. **Monorepo Architecture**: pnpm workspaces + Turborepo monorepo structure separating applications (`apps/`) and reusable packages (`packages/`).
-2. **`apps/web`**: Next.js 14 App Router application displaying system foundation status.
+2. **`apps/web`**: Next.js 14 App Router application.
 3. **`apps/api`**: NestJS HTTP server providing health monitoring via `GET /health`.
-4. **`apps/agent`**: Node.js/TypeScript background worker shell for future LiveKit agent integration.
-5. **`packages/shared`**: Centralized TypeScript types (`SystemHealth`, `ApiResponse`) and phase constants.
-6. **`packages/interview-engine`**: Engine module placeholder for future state machine.
+4. **`apps/agent`**: Node.js/TypeScript background worker shell.
+5. **`packages/shared`**: Centralized TypeScript types.
+6. **`packages/interview-engine`**: Engine module placeholder.
 7. **`packages/config`**: Centralized environment variable validation using `zod`.
 8. **`infra/`**: Local development infrastructure via Docker Compose (PostgreSQL 16 and Valkey).
 
@@ -22,45 +22,45 @@ The AI Interviewer platform is a production-oriented system for conducting real-
 ## Phase 2 Implementation Record
 
 ### What Was Built
-1. **Shared Session Contracts (`packages/shared`)**: Defined `SessionStatus`, `InterviewStage`, `InterviewType`, `InterviewSession` contracts, and `createSessionSchema` using Zod for client/server validation.
-2. **Mock Interviewer Engine (`packages/interview-engine`)**: Created `InterviewInteractionProvider` contract and `MockInterviewer` engine providing deterministic Q&A flows for technical, behavioral, and mixed interviews.
+1. **Shared Session Contracts (`packages/shared`)**: Defined `SessionStatus`, `InterviewStage`, `InterviewType`, `InterviewSession` contracts, and `createSessionSchema` using Zod.
+2. **Mock Interviewer Engine (`packages/interview-engine`)**: Created `InterviewInteractionProvider` contract and `MockInterviewer` engine providing deterministic Q&A flows.
 3. **Server-Authoritative REST API (`apps/api`)**: Developed `InterviewsService` and `InterviewsController` exposing endpoints: `POST /interviews`, `GET /interviews/:id`, `POST /interviews/:id/start`, and `POST /interviews/:id/end`.
-4. **Candidate UI Flow (`apps/web`)**:
-   - `LandingView`: Candidate introduction card.
-   - `SetupForm`: Validated form capturing candidate parameters.
-   - `WaitingRoom`: Pre-interview summary & start trigger.
-   - `InterviewShell`: Core Q&A screen with header, server-synced countdown timer (`SessionTimer`), progress bar, mock questions, and response buttons.
-   - `EndInterviewDialog`: Modal dialog confirming early or final conclusion.
-   - `CompletionScreen`: Conclusion view stating responses are recorded for evaluation.
-   - `ErrorMessage`: Accessible error display for 404 or connection failures.
-   - `Session Recovery`: Browser refresh on `/interview/[sessionId]` fetches authoritative state from `GET /interviews/:id` and restores exact UI view.
+4. **Candidate UI Flow (`apps/web`)**: Implemented `LandingView`, `SetupForm`, `WaitingRoom`, `InterviewShell`, `SessionTimer`, `EndInterviewDialog`, `CompletionScreen`, `ErrorMessage`, and `Session Recovery`.
 
-### Architectural Reasoning
-- **UI Decoupling**: React components consume `InterviewInteractionProvider` rather than implementing interview state machine logic directly. This allows swapping `MockInterviewer` with LiveKit Realtime Agent in Phase 3 without altering the UI.
-- **Server-Authoritative Session State**: The server owns status (`CREATED`, `IN_PROGRESS`, `COMPLETED`) and timestamps (`startedAt`, `completedAt`). The client cannot forge completion or timer values.
-- **Why Mock Interviewer Exists**: Decouples UI candidate experience validation from complex AI/WebRTC infrastructure, enabling fast testing of session lifecycle.
+---
 
-### API Architecture
-- `POST /interviews`: Validates input with `createSessionSchema`, creates session ID (`sess_<timestamp>_<random>`), returns session object.
-- `GET /interviews/:id`: Returns session or 404 error.
-- `POST /interviews/:id/start`: Transitions state from `CREATED`/`WAITING` -> `IN_PROGRESS` and records `startedAt`.
-- `POST /interviews/:id/end`: Transitions state to `COMPLETED` and records `completedAt`.
+## Phase 3 Implementation Record
+
+### What Was Built
+1. **Backend Token Authorization (`apps/api`)**: Built `RealtimeService` using `livekit-server-sdk` (v2.x) exposing `POST /interviews/:id/realtime/token`. Validates session status and generates short-lived JWT tokens (30m TTL).
+2. **WebRTC Media Transport (`apps/web`)**: Integrated `livekit-client` (v2.x) and custom hook `useRealtimeAudio` for user-initiated microphone permission, room connection (`interview:{sessionId}`), track publication, and connection state handling (`DISCONNECTED`, `CONNECTING`, `CONNECTED`, `RECONNECTING`, `FAILED`).
+3. **Agent Realtime Participant (`apps/agent`)**: Updated `AgentWorker` to join rooms as participant identity `agent-{sessionId}`, monitoring track events and participant presence cleanly.
+4. **UI Realtime Dashboard (`apps/web`)**: Enhanced `InterviewShell` with WebRTC connection badge, microphone indicator, agent presence status, and error fallback alert.
+
+### Architectural Decisions
+- **Why LiveKit Was Selected**: Handles low-latency WebRTC media transport, room management, and participant presence out-of-the-box without requiring custom WebRTC signaling servers.
+- **Direct WebRTC Media Path**: Candidate browser connects directly to LiveKit Server. Media bytes bypass the NestJS API server completely, ensuring zero server media relay overhead.
+- **Backend Token Generation**: `LIVEKIT_API_KEY` and `LIVEKIT_API_SECRET` remain strictly on the backend. The browser receives only short-lived JWT participant tokens.
+- **Deterministic Room & Identity Strategy**:
+  - Room Name: `interview:{sessionId}`
+  - Candidate Identity: `candidate-{sessionId}`
+  - Agent Identity: `agent-{sessionId}`
+- **Audio Privacy**: Audio is transported live; no audio recording, egress, or S3 uploads are enabled in Phase 3.
+
+### Dependencies Added
+- `livekit-server-sdk` (`v2.3.0`) in `apps/api`
+- `livekit-client` (`v2.1.3`) in `apps/web` and `apps/agent`
 
 ### Testing & Verification
-- Unit tests in `packages/shared`, `packages/interview-engine`, `apps/api`, and `apps/web`.
+- Unit tests for backend token generation, agent participant room joining, shared contracts, and frontend hook.
 - Verification passed for `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm build`.
 
-### Security Considerations
-- Session IDs use unique random suffixes (`sess_<timestamp>_<hash>`).
-- Client cannot set status, stage, or start/completed timestamps directly; status transitions are enforced by `InterviewsService`.
-
 ### Known Limitations
-Explicitly deferred to future phases:
-- No real microphone audio access
-- No WebRTC or LiveKit rooms
-- No OpenAI or OpenAI Realtime APIs
-- No STT (Speech-to-Text) or TTS (Text-to-Speech)
-- No adaptive AI question generation or candidate evaluation scoring
+Phase 3 establishes realtime audio transport only. It explicitly does **NOT** contain:
+- OpenAI API or OpenAI Realtime model connections
+- Speech-to-Text (STT) or Text-to-Speech (TTS)
+- AI-generated responses or adaptive question logic
+- Candidate evaluation scoring or audio recording uploads
 
 ### Next Phase
-**Phase 3 — Realtime Audio Foundation**
+**Phase 4 — First End-to-End Voice Interview**

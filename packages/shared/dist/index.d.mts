@@ -33,6 +33,14 @@ interface InterviewSession {
     startedAt?: string;
     completedAt?: string;
 }
+type RealtimeConnectionState = 'DISCONNECTED' | 'CONNECTING' | 'CONNECTED' | 'RECONNECTING' | 'FAILED';
+type MicrophoneState = 'IDLE' | 'REQUESTING' | 'ACTIVE' | 'DENIED' | 'ERROR';
+interface RealtimeTokenResponse {
+    token: string;
+    url: string;
+    roomName: string;
+    participantIdentity: string;
+}
 interface SystemHealth {
     status: 'ok' | 'degraded' | 'down';
     timestamp: string;
@@ -49,6 +57,6 @@ interface ApiResponse<T = unknown> {
     };
     timestamp: string;
 }
-declare const PROJECT_PHASE: "Phase 2 \u2014 Candidate Interview Shell";
+declare const PROJECT_PHASE: "Phase 3 \u2014 Realtime Audio Foundation";
 
-export { type ApiResponse, type CreateSessionDto, type InterviewSession, type InterviewStage, type InterviewType, PROJECT_PHASE, type SessionStatus, type SystemHealth, createSessionSchema };
+export { type ApiResponse, type CreateSessionDto, type InterviewSession, type InterviewStage, type InterviewType, type MicrophoneState, PROJECT_PHASE, type RealtimeConnectionState, type RealtimeTokenResponse, type SessionStatus, type SystemHealth, createSessionSchema };

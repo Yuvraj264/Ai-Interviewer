@@ -1,4 +1,4 @@
-import { CreateSessionDto, InterviewSession, ApiResponse } from '@ai-interviewer/shared';
+import { CreateSessionDto, InterviewSession, RealtimeTokenResponse, ApiResponse } from '@ai-interviewer/shared';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -47,5 +47,11 @@ export class InterviewApiClient {
       method: 'POST',
     });
     return response.session;
+  }
+
+  public static async getRealtimeToken(id: string): Promise<RealtimeTokenResponse> {
+    return this.request<RealtimeTokenResponse>(`/interviews/${id}/realtime/token`, {
+      method: 'POST',
+    });
   }
 }

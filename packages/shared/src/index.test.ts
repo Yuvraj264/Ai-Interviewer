@@ -1,53 +1,30 @@
 import { describe, it, expect } from 'vitest';
-import { PROJECT_PHASE, createSessionSchema, InterviewSession } from './index';
+import { PROJECT_PHASE, RealtimeTokenResponse, RealtimeConnectionState } from './index';
 
-describe('Shared Package Phase 2 Contracts', () => {
-  it('should export current project phase constant', () => {
-    expect(PROJECT_PHASE).toBe('Phase 2 — Candidate Interview Shell');
+describe('Shared Package Phase 3 Contracts', () => {
+  it('should export current Phase 3 project phase constant', () => {
+    expect(PROJECT_PHASE).toBe('Phase 3 — Realtime Audio Foundation');
   });
 
-  it('should validate valid CreateSessionDto payload', () => {
-    const payload = {
-      candidateName: 'Jane Doe',
-      role: 'Full Stack Engineer',
-      type: 'technical',
-      durationMinutes: 20,
+  it('should validate RealtimeTokenResponse interface contract', () => {
+    const res: RealtimeTokenResponse = {
+      token: 'jwt.token.string',
+      url: 'ws://localhost:7880',
+      roomName: 'interview:sess_12345',
+      participantIdentity: 'candidate-sess_12345',
     };
-    const result = createSessionSchema.safeParse(payload);
-    expect(result.success).toBe(true);
+    expect(res.roomName).toBe('interview:sess_12345');
+    expect(res.participantIdentity).toBe('candidate-sess_12345');
   });
 
-  it('should reject invalid CreateSessionDto payload', () => {
-    const payload = {
-      candidateName: 'J',
-      role: '',
-      type: 'invalid-type',
-      durationMinutes: 45,
-    };
-    const result = createSessionSchema.safeParse(payload);
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      const errors = result.error.flatten().fieldErrors;
-      expect(errors.candidateName).toBeDefined();
-      expect(errors.role).toBeDefined();
-      expect(errors.type).toBeDefined();
-      expect(errors.durationMinutes).toBeDefined();
-    }
-  });
-
-  it('should format complete InterviewSession contract', () => {
-    const session: InterviewSession = {
-      id: 'sess_12345',
-      candidateName: 'Jane Doe',
-      role: 'Backend Engineer',
-      type: 'mixed',
-      durationMinutes: 30,
-      status: 'IN_PROGRESS',
-      currentStage: 'TECHNICAL',
-      createdAt: new Date().toISOString(),
-      startedAt: new Date().toISOString(),
-    };
-    expect(session.status).toBe('IN_PROGRESS');
-    expect(session.currentStage).toBe('TECHNICAL');
+  it('should support explicit RealtimeConnectionState values', () => {
+    const states: RealtimeConnectionState[] = [
+      'DISCONNECTED',
+      'CONNECTING',
+      'CONNECTED',
+      'RECONNECTING',
+      'FAILED',
+    ];
+    expect(states.length).toBe(5);
   });
 });

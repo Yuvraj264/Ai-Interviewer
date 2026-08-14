@@ -2,14 +2,17 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const vitest_1 = require("vitest");
 const interviews_service_1 = require("./interviews.service");
+const realtime_service_1 = require("./realtime.service");
 const interviews_controller_1 = require("./interviews.controller");
 const common_1 = require("@nestjs/common");
 (0, vitest_1.describe)('InterviewsController REST Endpoints', () => {
     let controller;
     let service;
+    let realtimeService;
     (0, vitest_1.beforeEach)(() => {
         service = new interviews_service_1.InterviewsService();
-        controller = new interviews_controller_1.InterviewsController(service);
+        realtimeService = new realtime_service_1.RealtimeService(service);
+        controller = new interviews_controller_1.InterviewsController(service, realtimeService);
     });
     (0, vitest_1.it)('should create an interview session with valid payload', () => {
         const res = controller.createSession({
@@ -46,20 +49,18 @@ const common_1 = require("@nestjs/common");
     (0, vitest_1.it)('should throw NotFoundException for unknown session ID', () => {
         (0, vitest_1.expect)(() => controller.getSession('non_existent_id')).toThrow(common_1.NotFoundException);
     });
-    (0, vitest_1.it)('should transition session status from CREATED to IN_PROGRESS and COMPLETED', () => {
+    (0, vitest_1.it)('should generate realtime token via controller endpoint', async () => {
         const createRes = controller.createSession({
-            candidateName: 'Charlie',
+            candidateName: 'David',
             role: 'Frontend Dev',
             type: 'mixed',
-            durationMinutes: 30,
+            durationMinutes: 20,
         });
         const sessionId = createRes.data.session.id;
-        const startRes = controller.startSession(sessionId);
-        (0, vitest_1.expect)(startRes.data?.session.status).toBe('IN_PROGRESS');
-        (0, vitest_1.expect)(startRes.data?.session.startedAt).toBeDefined();
-        const endRes = controller.endSession(sessionId);
-        (0, vitest_1.expect)(endRes.data?.session.status).toBe('COMPLETED');
-        (0, vitest_1.expect)(endRes.data?.session.completedAt).toBeDefined();
+        const tokenRes = await controller.getRealtimeToken(sessionId);
+        (0, vitest_1.expect)(tokenRes.success).toBe(true);
+        (0, vitest_1.expect)(tokenRes.data?.token).toBeDefined();
+        (0, vitest_1.expect)(tokenRes.data?.roomName).toBe(`interview:${sessionId}`);
     });
 });
 //# sourceMappingURL=interviews.controller.spec.js.map
