@@ -17,7 +17,7 @@ interface SetupFormProps {
 
 export const SetupForm: React.FC<SetupFormProps> = ({ onSubmit, isLoading }) => {
   const [candidateName, setCandidateName] = useState('');
-  const [role, setRole] = useState('Full Stack Engineer');
+  const [role, setRole] = useState('');
   const [type, setType] = useState<InterviewType>('technical');
   const [durationMinutes, setDurationMinutes] = useState(20);
   const [resumeText, setResumeText] = useState('');
@@ -47,8 +47,8 @@ export const SetupForm: React.FC<SetupFormProps> = ({ onSubmit, isLoading }) => 
     }
 
     await onSubmit({
-      candidateName,
-      role,
+      candidateName: candidateName.trim() || 'Alex Mercer',
+      role: role.trim() || 'Senior Backend Engineer',
       type,
       durationMinutes,
       resumeText: resumeText.trim() || undefined,

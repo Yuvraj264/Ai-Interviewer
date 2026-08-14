@@ -23,30 +23,30 @@ export class InterviewApiClient {
   }
 
   public static async createSession(dto: CreateSessionDto): Promise<InterviewSession> {
-    const response = await this.request<{ session: InterviewSession }>('/interviews', {
+    const response = await this.request<InterviewSession | { session: InterviewSession }>('/interviews', {
       method: 'POST',
       body: JSON.stringify(dto),
     });
-    return response.session;
+    return (response as { session?: InterviewSession }).session || (response as InterviewSession);
   }
 
   public static async getSession(id: string): Promise<InterviewSession> {
-    const response = await this.request<{ session: InterviewSession }>(`/interviews/${id}`);
-    return response.session;
+    const response = await this.request<InterviewSession | { session: InterviewSession }>(`/interviews/${id}`);
+    return (response as { session?: InterviewSession }).session || (response as InterviewSession);
   }
 
   public static async startSession(id: string): Promise<InterviewSession> {
-    const response = await this.request<{ session: InterviewSession }>(`/interviews/${id}/start`, {
+    const response = await this.request<InterviewSession | { session: InterviewSession }>(`/interviews/${id}/start`, {
       method: 'POST',
     });
-    return response.session;
+    return (response as { session?: InterviewSession }).session || (response as InterviewSession);
   }
 
   public static async endSession(id: string): Promise<InterviewSession> {
-    const response = await this.request<{ session: InterviewSession }>(`/interviews/${id}/end`, {
+    const response = await this.request<InterviewSession | { session: InterviewSession }>(`/interviews/${id}/end`, {
       method: 'POST',
     });
-    return response.session;
+    return (response as { session?: InterviewSession }).session || (response as InterviewSession);
   }
 
   public static async getRealtimeToken(id: string): Promise<RealtimeTokenResponse> {

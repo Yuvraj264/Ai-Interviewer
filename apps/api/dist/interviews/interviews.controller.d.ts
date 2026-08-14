@@ -1,9 +1,11 @@
-import { ApiResponse, InterviewSession, CandidateProfile, JobProfile, CandidateJobProfile, InterviewEvaluation, HumanReview, HumanReviewOverride } from '@ai-interviewer/shared';
+import { ApiResponse, InterviewSession, CandidateProfile, JobProfile, CandidateJobProfile, InterviewEvaluation, HumanReview, HumanReviewOverride, RealtimeTokenResponse } from '@ai-interviewer/shared';
 import { BoundedInterviewContext } from '@ai-interviewer/interview-engine';
 import { InterviewsService } from './interviews.service';
+import { RealtimeService } from './realtime.service';
 export declare class InterviewsController {
     private readonly interviewsService;
-    constructor(interviewsService: InterviewsService);
+    private readonly realtimeService;
+    constructor(interviewsService: InterviewsService, realtimeService: RealtimeService);
     createSession(body: {
         candidateName: string;
         role: string;
@@ -15,6 +17,7 @@ export declare class InterviewsController {
     getSession(id: string): ApiResponse<InterviewSession>;
     startSession(id: string): ApiResponse<InterviewSession>;
     endSession(id: string): ApiResponse<InterviewSession>;
+    getRealtimeToken(id: string): Promise<ApiResponse<RealtimeTokenResponse>>;
     parseResume(id: string, body: {
         resumeText: string;
     }): ApiResponse<CandidateProfile>;

@@ -1,14 +1,17 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { InterviewsController } from './interviews.controller';
 import { InterviewsService } from './interviews.service';
+import { RealtimeService } from './realtime.service';
 
 describe('InterviewsController Phase 8 Evaluation Endpoints', () => {
   let controller: InterviewsController;
   let service: InterviewsService;
+  let realtimeService: RealtimeService;
 
   beforeEach(() => {
     service = new InterviewsService();
-    controller = new InterviewsController(service);
+    realtimeService = new RealtimeService(service);
+    controller = new InterviewsController(service, realtimeService);
   });
 
   it('should create session, trigger evaluation, and fetch evaluation result', () => {
@@ -48,7 +51,7 @@ describe('InterviewsController Phase 8 Evaluation Endpoints', () => {
 
     expect(reviewRes.success).toBe(true);
     expect(reviewRes.data?.review.reviewerName).toBe('Lead Hiring Manager');
-    
+
     const updatedTechDim = reviewRes.data?.evaluation.evaluatedDimensions.find((d) => d.dimensionId === 'technical-knowledge');
     expect(updatedTechDim?.score).toBe(5);
   });

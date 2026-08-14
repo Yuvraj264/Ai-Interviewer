@@ -3,12 +3,15 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const vitest_1 = require("vitest");
 const interviews_controller_1 = require("./interviews.controller");
 const interviews_service_1 = require("./interviews.service");
+const realtime_service_1 = require("./realtime.service");
 (0, vitest_1.describe)('InterviewsController Phase 8 Evaluation Endpoints', () => {
     let controller;
     let service;
+    let realtimeService;
     (0, vitest_1.beforeEach)(() => {
         service = new interviews_service_1.InterviewsService();
-        controller = new interviews_controller_1.InterviewsController(service);
+        realtimeService = new realtime_service_1.RealtimeService(service);
+        controller = new interviews_controller_1.InterviewsController(service, realtimeService);
     });
     (0, vitest_1.it)('should create session, trigger evaluation, and fetch evaluation result', () => {
         const createRes = controller.createSession({

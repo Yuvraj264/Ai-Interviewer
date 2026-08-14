@@ -59,7 +59,7 @@ export const InterviewShell: React.FC<InterviewShellProps> = ({ session, onCompl
         setLocalTranscript((prev) => [
           ...prev,
           {
-            id: `tx_ai_${Date.now()}`,
+            id: `tx_ai_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
             speaker: 'ai',
             text: newState.currentQuestion,
             timestamp: new Date().toLocaleTimeString(),
@@ -83,7 +83,7 @@ export const InterviewShell: React.FC<InterviewShellProps> = ({ session, onCompl
     setLocalTranscript((prev) => [
       ...prev,
       {
-        id: `tx_cand_${Date.now()}`,
+        id: `tx_cand_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
         speaker: 'candidate',
         text: response,
         timestamp: new Date().toLocaleTimeString(),

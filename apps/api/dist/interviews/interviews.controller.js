@@ -15,9 +15,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.InterviewsController = void 0;
 const common_1 = require("@nestjs/common");
 const interviews_service_1 = require("./interviews.service");
+const realtime_service_1 = require("./realtime.service");
 let InterviewsController = class InterviewsController {
-    constructor(interviewsService) {
+    constructor(interviewsService, realtimeService) {
         this.interviewsService = interviewsService;
+        this.realtimeService = realtimeService;
     }
     createSession(body) {
         const session = this.interviewsService.createSession(body);
@@ -48,6 +50,14 @@ let InterviewsController = class InterviewsController {
         return {
             success: true,
             data: session,
+            timestamp: new Date().toISOString(),
+        };
+    }
+    async getRealtimeToken(id) {
+        const tokenData = await this.realtimeService.generateCandidateToken(id);
+        return {
+            success: true,
+            data: tokenData,
             timestamp: new Date().toISOString(),
         };
     }
@@ -138,6 +148,13 @@ __decorate([
     __metadata("design:returntype", Object)
 ], InterviewsController.prototype, "endSession", null);
 __decorate([
+    (0, common_1.Post)(':id/realtime/token'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], InterviewsController.prototype, "getRealtimeToken", null);
+__decorate([
     (0, common_1.Post)(':id/resume'),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
@@ -191,6 +208,7 @@ __decorate([
 ], InterviewsController.prototype, "submitHumanReview", null);
 exports.InterviewsController = InterviewsController = __decorate([
     (0, common_1.Controller)('interviews'),
-    __metadata("design:paramtypes", [interviews_service_1.InterviewsService])
+    __metadata("design:paramtypes", [interviews_service_1.InterviewsService,
+        realtime_service_1.RealtimeService])
 ], InterviewsController);
 //# sourceMappingURL=interviews.controller.js.map

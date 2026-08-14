@@ -8,13 +8,18 @@ import {
   InterviewEvaluation,
   HumanReview,
   HumanReviewOverride,
+  RealtimeTokenResponse,
 } from '@ai-interviewer/shared';
 import { BoundedInterviewContext } from '@ai-interviewer/interview-engine';
 import { InterviewsService } from './interviews.service';
+import { RealtimeService } from './realtime.service';
 
 @Controller('interviews')
 export class InterviewsController {
-  constructor(private readonly interviewsService: InterviewsService) {}
+  constructor(
+    private readonly interviewsService: InterviewsService,
+    private readonly realtimeService: RealtimeService
+  ) {}
 
   @Post()
   createSession(
@@ -62,6 +67,16 @@ export class InterviewsController {
     return {
       success: true,
       data: session,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  @Post(':id/realtime/token')
+  async getRealtimeToken(@Param('id') id: string): Promise<ApiResponse<RealtimeTokenResponse>> {
+    const tokenData = await this.realtimeService.generateCandidateToken(id);
+    return {
+      success: true,
+      data: tokenData,
       timestamp: new Date().toISOString(),
     };
   }
