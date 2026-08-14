@@ -1,13 +1,23 @@
 import { getValidatedEnv } from '@ai-interviewer/config';
 import {
   InterviewEngine,
+  AdaptiveQuestioningEngine,
   buildInterviewerInstructions,
   InterviewerPromptContext,
 } from '@ai-interviewer/interview-engine';
-import { AiConversationState, TranscriptItem, InterviewEngineState } from '@ai-interviewer/shared';
+import {
+  AiConversationState,
+  TranscriptItem,
+  InterviewEngineState,
+  AdaptiveDecisionRecord,
+  QualityCategory,
+} from '@ai-interviewer/shared';
 
 export interface LatencyTelemetry {
   candidateTurnEndTimestamp?: number;
+  analysisLatencyMs?: number;
+  decisionLatencyMs?: number;
+  totalAdaptiveLatencyMs?: number;
   firstAiAudioTimestamp?: number;
   timeToFirstAudioMs?: number;
 }
@@ -17,9 +27,12 @@ export class RealtimeVoiceSession {
   public readonly roomName: string;
   public readonly agentIdentity: string;
   private engine: InterviewEngine;
+  private adaptiveEngine: AdaptiveQuestioningEngine;
   private conversationState: AiConversationState = 'IDLE';
   private transcript: TranscriptItem[] = [];
   private telemetry: LatencyTelemetry = {};
+  private adaptiveRecords: AdaptiveDecisionRecord[] = [];
+  private signalHistory: QualityCategory[] = [];
 
   constructor(sessionId: string, promptContext?: InterviewerPromptContext) {
     this.sessionId = sessionId;
@@ -32,13 +45,15 @@ export class RealtimeVoiceSession {
       maxQuestions: 6,
     });
 
+    this.adaptiveEngine = new AdaptiveQuestioningEngine();
+
     const instructions = buildInterviewerInstructions(promptContext);
     const env = getValidatedEnv();
     if (!env.OPENAI_API_KEY) {
       console.warn(`[Realtime Voice Session ${sessionId}] Warning: OPENAI_API_KEY is not configured. Running in simulated voice agent mode.`);
     }
 
-    console.log(`[Realtime Voice Session ${sessionId}] Engine initialized. Prompt length: ${instructions.length} chars`);
+    console.log(`[Realtime Voice Session ${sessionId}] Adaptive Engine initialized. Prompt length: ${instructions.length} chars`);
   }
 
   public async startSession(): Promise<void> {
@@ -63,7 +78,9 @@ export class RealtimeVoiceSession {
     if (this.telemetry.candidateTurnEndTimestamp && !this.telemetry.firstAiAudioTimestamp) {
       this.telemetry.firstAiAudioTimestamp = Date.now();
       this.telemetry.timeToFirstAudioMs = this.telemetry.firstAiAudioTimestamp - this.telemetry.candidateTurnEndTimestamp;
-      console.log(`[Realtime Voice Session ${this.sessionId}] [telemetry.latency] time_to_first_audio: ${this.telemetry.timeToFirstAudioMs} ms`);
+      console.log(
+        `[Realtime Voice Session ${this.sessionId}] [telemetry.latency] adaptive_latency: ${this.telemetry.totalAdaptiveLatencyMs || 0} ms, time_to_first_audio: ${this.telemetry.timeToFirstAudioMs} ms`
+      );
     }
 
     console.log(`[Realtime Voice Session ${this.sessionId}] [ai.response.started] AI Speaking (Stage: ${this.engine.getState().stage}): "${text}"`);
@@ -85,8 +102,9 @@ export class RealtimeVoiceSession {
     }
   }
 
-  public handleCandidateTurnCompleted(candidateText: string): void {
-    this.telemetry.candidateTurnEndTimestamp = Date.now();
+  public async handleCandidateTurnCompleted(candidateText: string): Promise<void> {
+    const turnEnd = Date.now();
+    this.telemetry.candidateTurnEndTimestamp = turnEnd;
     this.telemetry.firstAiAudioTimestamp = undefined;
     this.telemetry.timeToFirstAudioMs = undefined;
 
@@ -101,12 +119,38 @@ export class RealtimeVoiceSession {
 
     this.conversationState = 'THINKING';
 
-    // Submit answer to Engine (Engine owns state transition)
-    const currentQ = this.engine.getState().currentQuestion;
+    const currentEngineState = this.engine.getState();
+    const currentQ = currentEngineState.currentQuestion;
+
     if (currentQ) {
+      // 1. Submit answer to Interview Engine (State authority)
       this.engine.submitAnswer(currentQ.id, candidateText);
+
+      // 2. Execute Adaptive Questioning Engine (Answer Analysis -> Adaptive Decision -> Question Selection)
+      const adaptiveResult = await this.adaptiveEngine.processCandidateAnswer(
+        this.sessionId,
+        currentQ.id,
+        currentQ.prompt,
+        candidateText,
+        currentEngineState.askedQuestionIds,
+        currentEngineState.stage,
+        currentQ.difficulty,
+        this.signalHistory
+      );
+
+      this.telemetry.analysisLatencyMs = adaptiveResult.latencyMs.analysisLatencyMs;
+      this.telemetry.decisionLatencyMs = adaptiveResult.latencyMs.decisionLatencyMs;
+      this.telemetry.totalAdaptiveLatencyMs = adaptiveResult.latencyMs.totalAdaptiveLatencyMs;
+
+      this.adaptiveRecords.push(adaptiveResult.record);
+      this.signalHistory.push(adaptiveResult.analysis.qualityCategory);
+
+      console.log(
+        `[Realtime Voice Session ${this.sessionId}] [adaptive.decision] Action: ${adaptiveResult.decision.action}, Rationale: "${adaptiveResult.decision.rationale}", Selected Q: ${adaptiveResult.nextQuestion?.id}`
+      );
     }
 
+    // 3. Query next valid question from Interview Engine
     const nextQ = this.engine.nextQuestion();
     if (nextQ) {
       this.speak(nextQ.prompt);
@@ -126,6 +170,10 @@ export class RealtimeVoiceSession {
 
   public getTranscript(): TranscriptItem[] {
     return [...this.transcript];
+  }
+
+  public getAdaptiveRecords(): AdaptiveDecisionRecord[] {
+    return [...this.adaptiveRecords];
   }
 
   public getTelemetry(): LatencyTelemetry {

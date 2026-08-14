@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { PROJECT_PHASE, createSessionSchema } from '@ai-interviewer/shared';
 
-describe('Web App Phase 5 Engine Shell', () => {
-  it('should reference correct Phase 5 project phase', () => {
-    expect(PROJECT_PHASE).toBe('Phase 5 — Interview State Machine & Interview Engine');
+describe('Web App Phase 6 Adaptive Shell', () => {
+  it('should reference correct Phase 6 project phase', () => {
+    expect(PROJECT_PHASE).toBe('Phase 6 — Adaptive Questioning Engine');
   });
 
   it('should validate form schema inputs before API submission', () => {

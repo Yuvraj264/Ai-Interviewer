@@ -71,6 +71,42 @@ interface InterviewEngineState {
     questionsRemaining: number;
     isCompleted: boolean;
 }
+type QualityCategory = 'STRONG' | 'ADEQUATE' | 'WEAK' | 'INCOMPLETE' | 'UNCLEAR';
+type AdaptiveAction = 'FOLLOW_UP' | 'PROBE' | 'CLARIFY' | 'INCREASE_DIFFICULTY' | 'DECREASE_DIFFICULTY' | 'NEW_TOPIC' | 'REVISIT_TOPIC' | 'TRANSITION_STAGE';
+interface EvidenceItem {
+    claim: string;
+    confidence: 'LOW' | 'MEDIUM' | 'HIGH';
+}
+interface AnswerAnalysis {
+    answerId: string;
+    questionId: string;
+    transcript: string;
+    completeness: 'LOW' | 'MEDIUM' | 'HIGH';
+    relevance: 'LOW' | 'MEDIUM' | 'HIGH';
+    depth: 'LOW' | 'MEDIUM' | 'HIGH';
+    qualityCategory: QualityCategory;
+    conceptsDetected: string[];
+    skillsDemonstrated: string[];
+    missingConcepts: string[];
+    evidence: EvidenceItem[];
+}
+interface AdaptiveDecision {
+    action: AdaptiveAction;
+    targetTopic?: string;
+    difficulty?: 'easy' | 'medium' | 'hard';
+    rationale: string;
+    confidence: number;
+    basedOnQuestionId: string;
+}
+interface AdaptiveDecisionRecord {
+    sessionId: string;
+    previousQuestionId: string;
+    analysis: AnswerAnalysis;
+    decision: AdaptiveDecision;
+    selectedQuestionId: string;
+    validationResult: 'ACCEPTED' | 'FALLBACK_USED';
+    timestamp: string;
+}
 interface TranscriptItem {
     id: string;
     speaker: 'ai' | 'candidate';
@@ -99,6 +135,6 @@ interface ApiResponse<T = unknown> {
     };
     timestamp: string;
 }
-declare const PROJECT_PHASE: "Phase 5 \u2014 Interview State Machine & Interview Engine";
+declare const PROJECT_PHASE: "Phase 6 \u2014 Adaptive Questioning Engine";
 
-export { type AiConversationState, type ApiResponse, type CreateSessionDto, type EngineEventType, type EngineQuestion, type EngineQuestionState, type InterviewConfig, type InterviewEngineState, type InterviewSession, type InterviewStage, type InterviewType, type MicrophoneState, PROJECT_PHASE, type RealtimeConnectionState, type RealtimeTokenResponse, type SessionStatus, type SystemHealth, type TranscriptItem, createSessionSchema };
+export { type AdaptiveAction, type AdaptiveDecision, type AdaptiveDecisionRecord, type AiConversationState, type AnswerAnalysis, type ApiResponse, type CreateSessionDto, type EngineEventType, type EngineQuestion, type EngineQuestionState, type EvidenceItem, type InterviewConfig, type InterviewEngineState, type InterviewSession, type InterviewStage, type InterviewType, type MicrophoneState, PROJECT_PHASE, type QualityCategory, type RealtimeConnectionState, type RealtimeTokenResponse, type SessionStatus, type SystemHealth, type TranscriptItem, createSessionSchema };

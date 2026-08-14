@@ -107,6 +107,56 @@ export interface InterviewEngineState {
   isCompleted: boolean;
 }
 
+export type QualityCategory = 'STRONG' | 'ADEQUATE' | 'WEAK' | 'INCOMPLETE' | 'UNCLEAR';
+
+export type AdaptiveAction =
+  | 'FOLLOW_UP'
+  | 'PROBE'
+  | 'CLARIFY'
+  | 'INCREASE_DIFFICULTY'
+  | 'DECREASE_DIFFICULTY'
+  | 'NEW_TOPIC'
+  | 'REVISIT_TOPIC'
+  | 'TRANSITION_STAGE';
+
+export interface EvidenceItem {
+  claim: string;
+  confidence: 'LOW' | 'MEDIUM' | 'HIGH';
+}
+
+export interface AnswerAnalysis {
+  answerId: string;
+  questionId: string;
+  transcript: string;
+  completeness: 'LOW' | 'MEDIUM' | 'HIGH';
+  relevance: 'LOW' | 'MEDIUM' | 'HIGH';
+  depth: 'LOW' | 'MEDIUM' | 'HIGH';
+  qualityCategory: QualityCategory;
+  conceptsDetected: string[];
+  skillsDemonstrated: string[];
+  missingConcepts: string[];
+  evidence: EvidenceItem[];
+}
+
+export interface AdaptiveDecision {
+  action: AdaptiveAction;
+  targetTopic?: string;
+  difficulty?: 'easy' | 'medium' | 'hard';
+  rationale: string;
+  confidence: number;
+  basedOnQuestionId: string;
+}
+
+export interface AdaptiveDecisionRecord {
+  sessionId: string;
+  previousQuestionId: string;
+  analysis: AnswerAnalysis;
+  decision: AdaptiveDecision;
+  selectedQuestionId: string;
+  validationResult: 'ACCEPTED' | 'FALLBACK_USED';
+  timestamp: string;
+}
+
 export interface TranscriptItem {
   id: string;
   speaker: 'ai' | 'candidate';
@@ -139,4 +189,4 @@ export interface ApiResponse<T = unknown> {
   timestamp: string;
 }
 
-export const PROJECT_PHASE = 'Phase 5 — Interview State Machine & Interview Engine' as const;
+export const PROJECT_PHASE = 'Phase 6 — Adaptive Questioning Engine' as const;

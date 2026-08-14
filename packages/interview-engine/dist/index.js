@@ -20,6 +20,13 @@ var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: tru
 // src/index.ts
 var index_exports = {};
 __export(index_exports, {
+  ADAPTIVE_DECISION_VERSION: () => ADAPTIVE_DECISION_VERSION,
+  ANSWER_ANALYSIS_VERSION: () => ANSWER_ANALYSIS_VERSION,
+  AdaptiveDecisionMaker: () => AdaptiveDecisionMaker,
+  AdaptiveQuestionSelector: () => AdaptiveQuestionSelector,
+  AdaptiveQuestioningEngine: () => AdaptiveQuestioningEngine,
+  AnswerAnalyzer: () => AnswerAnalyzer,
+  DeterministicFallbackHandler: () => DeterministicFallbackHandler,
   InterviewAlreadyCompletedError: () => InterviewAlreadyCompletedError,
   InterviewEngine: () => InterviewEngine,
   InvalidTransitionError: () => InvalidTransitionError,
@@ -356,6 +363,359 @@ var InterviewEngine = class {
   }
 };
 
+// src/adaptive/analyzer.ts
+var ANSWER_ANALYSIS_VERSION = "ANSWER_ANALYSIS_V1";
+var AnswerAnalyzer = class {
+  constructor(options = {}) {
+    this.options = options;
+  }
+  options;
+  version = ANSWER_ANALYSIS_VERSION;
+  getVersion() {
+    return this.version;
+  }
+  async analyzeAnswer(questionId, questionPrompt, rawTranscript) {
+    const answerId = `ans_${Date.now()}`;
+    const cleanTranscript = this.sanitizeTranscript(rawTranscript);
+    if (this.containsPromptInjection(cleanTranscript)) {
+      console.warn(`[AnswerAnalyzer] Prompt injection attempt detected in transcript. Falling back to safe UNCLEAR analysis.`);
+      return {
+        answerId,
+        questionId,
+        transcript: cleanTranscript,
+        completeness: "LOW",
+        relevance: "LOW",
+        depth: "LOW",
+        qualityCategory: "UNCLEAR",
+        conceptsDetected: [],
+        skillsDemonstrated: [],
+        missingConcepts: ["relevance-to-question"],
+        evidence: [{ claim: "Candidate submitted untrusted prompt instructions instead of direct answer.", confidence: "HIGH" }]
+      };
+    }
+    const concepts = this.extractGroundedConcepts(cleanTranscript);
+    const qualityCategory = this.classifyQuality(cleanTranscript, concepts);
+    const completeness = qualityCategory === "STRONG" ? "HIGH" : qualityCategory === "ADEQUATE" ? "MEDIUM" : "LOW";
+    const relevance = qualityCategory === "UNCLEAR" ? "LOW" : "HIGH";
+    const depth = qualityCategory === "STRONG" ? "HIGH" : qualityCategory === "ADEQUATE" ? "MEDIUM" : "LOW";
+    const evidence = concepts.map((concept) => ({
+      claim: `Candidate explicitly mentioned ${concept} in answer transcript.`,
+      confidence: "HIGH"
+    }));
+    return {
+      answerId,
+      questionId,
+      transcript: cleanTranscript,
+      completeness,
+      relevance,
+      depth,
+      qualityCategory,
+      conceptsDetected: concepts,
+      skillsDemonstrated: concepts.filter((c) => ["redis", "caching", "rest-api", "database", "postgres", "microservices"].includes(c)),
+      missingConcepts: this.identifyMissingConcepts(questionPrompt, concepts),
+      evidence
+    };
+  }
+  sanitizeTranscript(transcript) {
+    return transcript.trim();
+  }
+  containsPromptInjection(transcript) {
+    const injectionPatterns = [
+      /ignore (previous|above|system|all) instructions/i,
+      /reveal (system|internal) prompt/i,
+      /give me the interview questions/i,
+      /you are now a/i,
+      /system prompt/i
+    ];
+    return injectionPatterns.some((pattern) => pattern.test(transcript));
+  }
+  extractGroundedConcepts(transcript) {
+    const text = transcript.toLowerCase();
+    const knownConcepts = [
+      "redis",
+      "caching",
+      "postgres",
+      "postgresql",
+      "database",
+      "indexing",
+      "acid",
+      "rest-api",
+      "http",
+      "microservices",
+      "queue",
+      "kafka",
+      "docker",
+      "react",
+      "node"
+    ];
+    return knownConcepts.filter((concept) => text.includes(concept));
+  }
+  classifyQuality(transcript, concepts) {
+    const words = transcript.trim().split(/\s+/).filter(Boolean);
+    if (words.length === 0) return "UNCLEAR";
+    if (words.length < 4) return "INCOMPLETE";
+    if (concepts.length >= 2 || words.length > 20 && concepts.length >= 1) {
+      return "STRONG";
+    }
+    if (concepts.length === 1 || words.length > 10) {
+      return "ADEQUATE";
+    }
+    return "WEAK";
+  }
+  identifyMissingConcepts(prompt, detected) {
+    const text = prompt.toLowerCase();
+    const missing = [];
+    if (text.includes("cache") || text.includes("redis")) {
+      if (!detected.includes("caching")) missing.push("caching-strategy");
+      if (!detected.includes("indexing")) missing.push("cache-invalidation");
+    }
+    if (text.includes("database") || text.includes("index")) {
+      if (!detected.includes("indexing")) missing.push("database-indexes");
+    }
+    return missing;
+  }
+};
+
+// src/adaptive/decision-maker.ts
+var ADAPTIVE_DECISION_VERSION = "ADAPTIVE_DECISION_V1";
+var AdaptiveDecisionMaker = class {
+  version = ADAPTIVE_DECISION_VERSION;
+  getVersion() {
+    return this.version;
+  }
+  decideNextAction(analysis, currentDifficulty = "medium", recentSignalHistory = []) {
+    const history = [...recentSignalHistory, analysis.qualityCategory];
+    const lastTwo = history.slice(-2);
+    if (lastTwo.length >= 2 && lastTwo.every((sig) => sig === "STRONG")) {
+      if (currentDifficulty === "easy") {
+        return {
+          action: "INCREASE_DIFFICULTY",
+          difficulty: "medium",
+          rationale: "Candidate demonstrated 2 consecutive strong technical answers. Elevating difficulty to medium.",
+          confidence: 0.9,
+          basedOnQuestionId: analysis.questionId
+        };
+      }
+      if (currentDifficulty === "medium") {
+        return {
+          action: "INCREASE_DIFFICULTY",
+          difficulty: "hard",
+          rationale: "Candidate demonstrated 2 consecutive strong technical answers. Elevating difficulty to hard.",
+          confidence: 0.9,
+          basedOnQuestionId: analysis.questionId
+        };
+      }
+    }
+    if (lastTwo.length >= 2 && lastTwo.every((sig) => sig === "WEAK")) {
+      if (currentDifficulty === "hard") {
+        return {
+          action: "DECREASE_DIFFICULTY",
+          difficulty: "medium",
+          rationale: "Candidate struggled on 2 consecutive answers. Adjusting difficulty down to medium.",
+          confidence: 0.85,
+          basedOnQuestionId: analysis.questionId
+        };
+      }
+      if (currentDifficulty === "medium") {
+        return {
+          action: "DECREASE_DIFFICULTY",
+          difficulty: "easy",
+          rationale: "Candidate struggled on 2 consecutive answers. Adjusting difficulty down to easy.",
+          confidence: 0.85,
+          basedOnQuestionId: analysis.questionId
+        };
+      }
+    }
+    if (analysis.qualityCategory === "UNCLEAR") {
+      return {
+        action: "CLARIFY",
+        rationale: "Candidate answer transcript was unclear or ambiguous. Seeking clarification.",
+        confidence: 0.8,
+        basedOnQuestionId: analysis.questionId
+      };
+    }
+    if (analysis.missingConcepts.length > 0) {
+      const targetTopic = analysis.missingConcepts[0];
+      return {
+        action: "FOLLOW_UP",
+        targetTopic,
+        rationale: `Candidate discussed main concept but omitted ${targetTopic}. Requesting targeted follow-up.`,
+        confidence: 0.88,
+        basedOnQuestionId: analysis.questionId
+      };
+    }
+    if (analysis.qualityCategory === "ADEQUATE") {
+      return {
+        action: "PROBE",
+        rationale: "Candidate gave adequate high-level response. Probing for technical depth.",
+        confidence: 0.85,
+        basedOnQuestionId: analysis.questionId
+      };
+    }
+    return {
+      action: "NEW_TOPIC",
+      rationale: "Current topic sufficiently covered with strong evidence. Transitioning to new topic.",
+      confidence: 0.95,
+      basedOnQuestionId: analysis.questionId
+    };
+  }
+};
+
+// src/adaptive/question-selector.ts
+var AdaptiveQuestionSelector = class {
+  maxFollowUps = 2;
+  constructor(options) {
+    if (options?.maxFollowUpsPerQuestion) {
+      this.maxFollowUps = options.maxFollowUpsPerQuestion;
+    }
+  }
+  selectNextQuestion(decision, askedQuestionIds, currentStage, currentDifficulty, followUpCountForCurrentQuestion = 0) {
+    const askedSet = new Set(askedQuestionIds);
+    const available = QUESTION_BANK.filter((q) => !askedSet.has(q.id));
+    if (available.length === 0) return null;
+    const filtered = available.filter((q) => {
+      const validStages = [currentStage, "TECHNICAL", "BEHAVIORAL", "CLOSING"];
+      if (!validStages.includes(q.stage)) return false;
+      if (currentDifficulty === "easy" && q.difficulty === "hard") return false;
+      return true;
+    });
+    if (filtered.length === 0) return available[0];
+    const enforceFollowUp = decision.action === "FOLLOW_UP" && followUpCountForCurrentQuestion < this.maxFollowUps;
+    const scored = filtered.map((q) => {
+      let score = 0;
+      if (q.stage === currentStage) score += 30;
+      if (decision.targetTopic && q.topic.includes(decision.targetTopic)) {
+        score += 50;
+      }
+      const targetDiff = decision.difficulty || currentDifficulty;
+      if (q.difficulty === targetDiff) score += 20;
+      if (enforceFollowUp && q.id.includes(decision.basedOnQuestionId)) score += 40;
+      return { question: q, score };
+    });
+    scored.sort((a, b) => b.score - a.score);
+    return scored[0].question;
+  }
+};
+
+// src/adaptive/fallback-handler.ts
+var DeterministicFallbackHandler = class {
+  selectFallbackQuestion(askedQuestionIds, currentStage, reason) {
+    console.warn(`[DeterministicFallbackHandler] Fallback triggered due to: ${reason}`);
+    const askedSet = new Set(askedQuestionIds);
+    const unasked = QUESTION_BANK.filter((q) => !askedSet.has(q.id));
+    if (unasked.length === 0) {
+      return {
+        question: null,
+        rationale: `Fallback triggered (${reason}). All questions in bank have been asked.`
+      };
+    }
+    const stageMatch = unasked.find((q) => q.stage === currentStage);
+    const selected = stageMatch || unasked[0];
+    return {
+      question: selected,
+      rationale: `Deterministic fallback selected question '${selected.id}' matching stage '${selected.stage}' due to ${reason}.`
+    };
+  }
+};
+
+// src/adaptive/adaptive-engine.ts
+var AdaptiveQuestioningEngine = class {
+  analyzer;
+  decisionMaker;
+  selector;
+  fallbackHandler;
+  constructor() {
+    this.analyzer = new AnswerAnalyzer();
+    this.decisionMaker = new AdaptiveDecisionMaker();
+    this.selector = new AdaptiveQuestionSelector();
+    this.fallbackHandler = new DeterministicFallbackHandler();
+  }
+  async processCandidateAnswer(sessionId, currentQuestionId, questionPrompt, candidateTranscript, askedQuestionIds, currentStage, currentDifficulty = "medium", recentSignalHistory = []) {
+    const startTime = Date.now();
+    try {
+      const analysisStart = Date.now();
+      const analysis = await this.analyzer.analyzeAnswer(currentQuestionId, questionPrompt, candidateTranscript);
+      const analysisLatencyMs = Date.now() - analysisStart;
+      const decisionStart = Date.now();
+      const decision = this.decisionMaker.decideNextAction(analysis, currentDifficulty, recentSignalHistory);
+      const decisionLatencyMs = Date.now() - decisionStart;
+      const nextQuestion = this.selector.selectNextQuestion(
+        decision,
+        askedQuestionIds,
+        currentStage,
+        decision.difficulty || currentDifficulty
+      );
+      const totalAdaptiveLatencyMs = Date.now() - startTime;
+      const record = {
+        sessionId,
+        previousQuestionId: currentQuestionId,
+        analysis,
+        decision,
+        selectedQuestionId: nextQuestion?.id || "none",
+        validationResult: "ACCEPTED",
+        timestamp: (/* @__PURE__ */ new Date()).toISOString()
+      };
+      return {
+        analysis,
+        decision,
+        nextQuestion,
+        record,
+        latencyMs: {
+          analysisLatencyMs,
+          decisionLatencyMs,
+          totalAdaptiveLatencyMs
+        }
+      };
+    } catch (error) {
+      console.error(`[AdaptiveQuestioningEngine] Adaptive processing failed. Falling back to deterministic selector. Error:`, error);
+      return this.executeFallback(sessionId, currentQuestionId, askedQuestionIds, currentStage, "PROVIDER_ERROR", startTime);
+    }
+  }
+  executeFallback(sessionId, currentQuestionId, askedQuestionIds, currentStage, reason, startTime = Date.now()) {
+    const { question, rationale } = this.fallbackHandler.selectFallbackQuestion(askedQuestionIds, currentStage, reason);
+    const fallbackAnalysis = {
+      answerId: `ans_fallback_${Date.now()}`,
+      questionId: currentQuestionId,
+      transcript: "",
+      completeness: "LOW",
+      relevance: "LOW",
+      depth: "LOW",
+      qualityCategory: "UNCLEAR",
+      conceptsDetected: [],
+      skillsDemonstrated: [],
+      missingConcepts: [],
+      evidence: []
+    };
+    const fallbackDecision = {
+      action: "NEW_TOPIC",
+      rationale,
+      confidence: 1,
+      basedOnQuestionId: currentQuestionId
+    };
+    const totalAdaptiveLatencyMs = Date.now() - startTime;
+    const record = {
+      sessionId,
+      previousQuestionId: currentQuestionId,
+      analysis: fallbackAnalysis,
+      decision: fallbackDecision,
+      selectedQuestionId: question?.id || "none",
+      validationResult: "FALLBACK_USED",
+      timestamp: (/* @__PURE__ */ new Date()).toISOString()
+    };
+    return {
+      analysis: fallbackAnalysis,
+      decision: fallbackDecision,
+      nextQuestion: question,
+      record,
+      latencyMs: {
+        analysisLatencyMs: 0,
+        decisionLatencyMs: 0,
+        totalAdaptiveLatencyMs
+      }
+    };
+  }
+};
+
 // src/index.ts
 var DETERMINISTIC_QUESTIONS = {
   technical: [
@@ -433,6 +793,13 @@ var MockInterviewer = class {
 };
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
+  ADAPTIVE_DECISION_VERSION,
+  ANSWER_ANALYSIS_VERSION,
+  AdaptiveDecisionMaker,
+  AdaptiveQuestionSelector,
+  AdaptiveQuestioningEngine,
+  AnswerAnalyzer,
+  DeterministicFallbackHandler,
   InterviewAlreadyCompletedError,
   InterviewEngine,
   InvalidTransitionError,

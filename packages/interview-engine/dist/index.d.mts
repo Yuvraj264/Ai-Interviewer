@@ -1,4 +1,4 @@
-import { EngineQuestion, InterviewType, InterviewConfig, InterviewEngineState, InterviewStage } from '@ai-interviewer/shared';
+import { EngineQuestion, InterviewType, InterviewConfig, InterviewEngineState, InterviewStage, AnswerAnalysis, QualityCategory, AdaptiveDecision, AdaptiveDecisionRecord } from '@ai-interviewer/shared';
 
 interface InterviewerPromptContext {
     candidateName?: string;
@@ -48,6 +48,69 @@ declare class InterviewEngine {
     getState(): InterviewEngineState;
 }
 
+declare const ANSWER_ANALYSIS_VERSION: "ANSWER_ANALYSIS_V1";
+interface AnalyzerOptions {
+    apiKey?: string;
+    timeoutMs?: number;
+}
+declare class AnswerAnalyzer {
+    private options;
+    private version;
+    constructor(options?: AnalyzerOptions);
+    getVersion(): string;
+    analyzeAnswer(questionId: string, questionPrompt: string, rawTranscript: string): Promise<AnswerAnalysis>;
+    private sanitizeTranscript;
+    private containsPromptInjection;
+    private extractGroundedConcepts;
+    private classifyQuality;
+    private identifyMissingConcepts;
+}
+
+declare const ADAPTIVE_DECISION_VERSION: "ADAPTIVE_DECISION_V1";
+declare class AdaptiveDecisionMaker {
+    private version;
+    getVersion(): string;
+    decideNextAction(analysis: AnswerAnalysis, currentDifficulty?: 'easy' | 'medium' | 'hard', recentSignalHistory?: QualityCategory[]): AdaptiveDecision;
+}
+
+interface QuestionSelectorOptions {
+    maxFollowUpsPerQuestion?: number;
+}
+declare class AdaptiveQuestionSelector {
+    private maxFollowUps;
+    constructor(options?: QuestionSelectorOptions);
+    selectNextQuestion(decision: AdaptiveDecision, askedQuestionIds: string[], currentStage: InterviewStage, currentDifficulty: 'easy' | 'medium' | 'hard', followUpCountForCurrentQuestion?: number): EngineQuestion | null;
+}
+
+type FallbackReason = 'TIMEOUT' | 'RATE_LIMIT' | 'INVALID_OUTPUT' | 'PROVIDER_ERROR' | 'NETWORK_ERROR' | 'SCHEMA_VALIDATION_ERROR';
+declare class DeterministicFallbackHandler {
+    selectFallbackQuestion(askedQuestionIds: string[], currentStage: InterviewStage, reason: FallbackReason): {
+        question: EngineQuestion | null;
+        rationale: string;
+    };
+}
+
+interface AdaptiveEngineResult {
+    analysis: AnswerAnalysis;
+    decision: AdaptiveDecision;
+    nextQuestion: EngineQuestion | null;
+    record: AdaptiveDecisionRecord;
+    latencyMs: {
+        analysisLatencyMs: number;
+        decisionLatencyMs: number;
+        totalAdaptiveLatencyMs: number;
+    };
+}
+declare class AdaptiveQuestioningEngine {
+    private analyzer;
+    private decisionMaker;
+    private selector;
+    private fallbackHandler;
+    constructor();
+    processCandidateAnswer(sessionId: string, currentQuestionId: string, questionPrompt: string, candidateTranscript: string, askedQuestionIds: string[], currentStage: InterviewStage, currentDifficulty?: 'easy' | 'medium' | 'hard', recentSignalHistory?: QualityCategory[]): Promise<AdaptiveEngineResult>;
+    executeFallback(sessionId: string, currentQuestionId: string, askedQuestionIds: string[], currentStage: InterviewStage, reason: FallbackReason, startTime?: number): AdaptiveEngineResult;
+}
+
 interface InterviewInteractionProvider {
     start(): Promise<void>;
     submitCandidateResponse(response: string): Promise<void>;
@@ -88,4 +151,4 @@ declare class MockInterviewer implements InterviewInteractionProvider {
     private notifyState;
 }
 
-export { InterviewAlreadyCompletedError, InterviewEngine, type InterviewInteractionProvider, type InterviewerPromptContext, InvalidTransitionError, MockInterviewer, type MockInterviewerState, QUESTION_BANK, QuestionBudgetExceededError, SessionNotFoundError, buildInterviewerInstructions, getQuestionsForType };
+export { ADAPTIVE_DECISION_VERSION, ANSWER_ANALYSIS_VERSION, AdaptiveDecisionMaker, type AdaptiveEngineResult, AdaptiveQuestionSelector, AdaptiveQuestioningEngine, type AnalyzerOptions, AnswerAnalyzer, DeterministicFallbackHandler, type FallbackReason, InterviewAlreadyCompletedError, InterviewEngine, type InterviewInteractionProvider, type InterviewerPromptContext, InvalidTransitionError, MockInterviewer, type MockInterviewerState, QUESTION_BANK, QuestionBudgetExceededError, type QuestionSelectorOptions, SessionNotFoundError, buildInterviewerInstructions, getQuestionsForType };

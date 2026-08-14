@@ -2,6 +2,11 @@ export * from './prompts/interviewer';
 export * from './bank/questions';
 export * from './engine/domain-errors';
 export * from './engine/interview-engine';
+export * from './adaptive/analyzer';
+export * from './adaptive/decision-maker';
+export * from './adaptive/question-selector';
+export * from './adaptive/fallback-handler';
+export * from './adaptive/adaptive-engine';
 
 export interface InterviewInteractionProvider {
   start(): Promise<void>;

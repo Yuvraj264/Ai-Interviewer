@@ -34,9 +34,12 @@ var RealtimeVoiceSession = class {
   roomName;
   agentIdentity;
   engine;
+  adaptiveEngine;
   conversationState = "IDLE";
   transcript = [];
   telemetry = {};
+  adaptiveRecords = [];
+  signalHistory = [];
   constructor(sessionId, promptContext) {
     this.sessionId = sessionId;
     this.roomName = `interview:${sessionId}`;
@@ -46,12 +49,13 @@ var RealtimeVoiceSession = class {
       durationMinutes: 20,
       maxQuestions: 6
     });
+    this.adaptiveEngine = new import_interview_engine.AdaptiveQuestioningEngine();
     const instructions = (0, import_interview_engine.buildInterviewerInstructions)(promptContext);
     const env = (0, import_config.getValidatedEnv)();
     if (!env.OPENAI_API_KEY) {
       console.warn(`[Realtime Voice Session ${sessionId}] Warning: OPENAI_API_KEY is not configured. Running in simulated voice agent mode.`);
     }
-    console.log(`[Realtime Voice Session ${sessionId}] Engine initialized. Prompt length: ${instructions.length} chars`);
+    console.log(`[Realtime Voice Session ${sessionId}] Adaptive Engine initialized. Prompt length: ${instructions.length} chars`);
   }
   async startSession() {
     this.conversationState = "CONNECTING";
@@ -68,7 +72,9 @@ var RealtimeVoiceSession = class {
     if (this.telemetry.candidateTurnEndTimestamp && !this.telemetry.firstAiAudioTimestamp) {
       this.telemetry.firstAiAudioTimestamp = Date.now();
       this.telemetry.timeToFirstAudioMs = this.telemetry.firstAiAudioTimestamp - this.telemetry.candidateTurnEndTimestamp;
-      console.log(`[Realtime Voice Session ${this.sessionId}] [telemetry.latency] time_to_first_audio: ${this.telemetry.timeToFirstAudioMs} ms`);
+      console.log(
+        `[Realtime Voice Session ${this.sessionId}] [telemetry.latency] adaptive_latency: ${this.telemetry.totalAdaptiveLatencyMs || 0} ms, time_to_first_audio: ${this.telemetry.timeToFirstAudioMs} ms`
+      );
     }
     console.log(`[Realtime Voice Session ${this.sessionId}] [ai.response.started] AI Speaking (Stage: ${this.engine.getState().stage}): "${text}"`);
     this.transcript.push({
@@ -85,8 +91,9 @@ var RealtimeVoiceSession = class {
       this.conversationState = "INTERRUPTED";
     }
   }
-  handleCandidateTurnCompleted(candidateText) {
-    this.telemetry.candidateTurnEndTimestamp = Date.now();
+  async handleCandidateTurnCompleted(candidateText) {
+    const turnEnd = Date.now();
+    this.telemetry.candidateTurnEndTimestamp = turnEnd;
     this.telemetry.firstAiAudioTimestamp = void 0;
     this.telemetry.timeToFirstAudioMs = void 0;
     console.log(`[Realtime Voice Session ${this.sessionId}] [candidate.turn.completed] Candidate: "${candidateText}"`);
@@ -97,9 +104,28 @@ var RealtimeVoiceSession = class {
       timestamp: (/* @__PURE__ */ new Date()).toISOString()
     });
     this.conversationState = "THINKING";
-    const currentQ = this.engine.getState().currentQuestion;
+    const currentEngineState = this.engine.getState();
+    const currentQ = currentEngineState.currentQuestion;
     if (currentQ) {
       this.engine.submitAnswer(currentQ.id, candidateText);
+      const adaptiveResult = await this.adaptiveEngine.processCandidateAnswer(
+        this.sessionId,
+        currentQ.id,
+        currentQ.prompt,
+        candidateText,
+        currentEngineState.askedQuestionIds,
+        currentEngineState.stage,
+        currentQ.difficulty,
+        this.signalHistory
+      );
+      this.telemetry.analysisLatencyMs = adaptiveResult.latencyMs.analysisLatencyMs;
+      this.telemetry.decisionLatencyMs = adaptiveResult.latencyMs.decisionLatencyMs;
+      this.telemetry.totalAdaptiveLatencyMs = adaptiveResult.latencyMs.totalAdaptiveLatencyMs;
+      this.adaptiveRecords.push(adaptiveResult.record);
+      this.signalHistory.push(adaptiveResult.analysis.qualityCategory);
+      console.log(
+        `[Realtime Voice Session ${this.sessionId}] [adaptive.decision] Action: ${adaptiveResult.decision.action}, Rationale: "${adaptiveResult.decision.rationale}", Selected Q: ${adaptiveResult.nextQuestion?.id}`
+      );
     }
     const nextQ = this.engine.nextQuestion();
     if (nextQ) {
@@ -117,6 +143,9 @@ var RealtimeVoiceSession = class {
   }
   getTranscript() {
     return [...this.transcript];
+  }
+  getAdaptiveRecords() {
+    return [...this.adaptiveRecords];
   }
   getTelemetry() {
     return { ...this.telemetry };

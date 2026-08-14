@@ -20,69 +20,75 @@
 ### Phase 5 — Interview State Machine & Interview Engine
 **Status**: COMPLETED
 
-### Phase 6 — Adaptive Questioning
+### Phase 6 — Adaptive Questioning Engine
+**Status**: COMPLETED
+
+### Phase 7 — Resume + Job Description Intelligence
 **Status**: NOT STARTED
 
 ---
 
-## Phase 5 Implementation Log
+## Phase 6 Implementation Log
 
-### Phase 5 Entry Point
+### Phase 6 Entry Point
 ```text
-Phase 4 voice interview verified
+Phase 5 Interview Engine verified
        ↓
-Voice conversation works
+Structured interview state machine exists
        ↓
-Introduce deterministic Interview Engine & State Machine
+Introduce evidence-grounded adaptive questioning engine
 ```
 
-### Phase 5 Architecture
+### Phase 6 Architecture & Workflow
 
 ```text
 Candidate Speech
        ↓
 Realtime Agent
        ↓
-Candidate Answer Event
+Candidate Answer
        ↓
-Interview Engine (Deterministic State Machine)
-       │
-       ├── Validates Stage & Time Limit
-       ├── Enforces Question Budget
-       ├── Updates Covered Topics
-       └── Selects Allowed Next Question
+Answer Analysis (Completeness, Depth, Relevance, Quality Category)
        ↓
-Realtime Agent
+Evidence Extraction (Grounded Concept Claims, Missing Concepts)
        ↓
-OpenAI Realtime (Conversational Phrasing)
+Adaptive Decision (Action: FOLLOW_UP, PROBE, CLARIFY, INCREASE_DIFFICULTY, NEW_TOPIC)
        ↓
-Candidate Speaker
+Interview Engine Validation & Difficulty Bounds Check
+       ↓
+Question Filtering & Ranking (Topic Cooldowns & Follow-up Limits)
+       ↓
+Selected Question
+       ↓
+Realtime Agent Voice Output
 ```
 
-### State Machine Lifecycle
-- `CREATED` -> `WAITING` -> `INTRO` -> `BACKGROUND` -> `PROJECT_DEEP_DIVE` -> `TECHNICAL` -> `BEHAVIORAL` -> `CLOSING` -> `COMPLETING` -> `COMPLETED`
-- Terminal States: `COMPLETED`, `CANCELLED`, `FAILED`
+### Supported Adaptive Actions
+- `FOLLOW_UP`: Candidate gave incomplete answer omitting key concept (e.g. mentioned Redis but omitted cache invalidation).
+- `PROBE`: Candidate gave adequate high-level response; probing for technical depth.
+- `CLARIFY`: Candidate answer transcript was ambiguous or unclear.
+- `INCREASE_DIFFICULTY`: Candidate demonstrated 2 consecutive `STRONG` answers (`EASY` -> `MEDIUM` -> `HARD`).
+- `DECREASE_DIFFICULTY`: Candidate struggled on 2 consecutive `WEAK` answers (`HARD` -> `MEDIUM` -> `EASY`).
+- `NEW_TOPIC`: Current topic sufficiently covered with strong evidence; transitioning to next topic.
 
-### Engine Completion Precedence Policy
-1. Explicit Candidate End (`endSession()`)
-2. System / Provider Failure (`FAILED`)
-3. Time Limit Reached (`remainingSeconds <= 0`)
-4. Question Budget Exhausted (`questionsAsked >= maxQuestions`)
-5. Normal Stage Completion (`CLOSING` -> `COMPLETED`)
+### Mandatory Fallback Strategy
+- Handled Failure Modes: `TIMEOUT`, `RATE_LIMIT`, `INVALID_OUTPUT`, `PROVIDER_ERROR`, `SCHEMA_VALIDATION_ERROR`.
+- Preserves current interview state. Selects next valid question from question bank deterministically without failing candidate session.
 
-### Core Architectural Principle
-- **THE LLM DOES NOT OWN INTERVIEW STATE.** The Interview Engine deterministically validates and applies all state transitions, question budgets, and completion rules. The LLM provides natural conversational phrasing for engine-selected questions but cannot alter session status or skip stages.
+### Latency Measurement Breakdown
+- `analysisLatencyMs`: Answer transcript analysis & evidence extraction.
+- `decisionLatencyMs`: Adaptive decision generation & rationale mapping.
+- `totalAdaptiveLatencyMs`: Total pipeline latency from candidate turn end to question selection.
 
-### Environment Independence
-- `@ai-interviewer/interview-engine` has zero dependencies on React, browser APIs, LiveKit, or OpenAI SDKs. It runs purely in Node.js or unit tests.
-
-### Files Added/Modified in Phase 5
+### Files Added/Modified in Phase 6
 - `packages/shared/src/index.ts`
 - `packages/shared/src/index.test.ts`
-- `packages/interview-engine/src/bank/questions.ts`
-- `packages/interview-engine/src/engine/domain-errors.ts`
-- `packages/interview-engine/src/engine/interview-engine.ts`
-- `packages/interview-engine/src/engine/interview-engine.test.ts`
+- `packages/interview-engine/src/adaptive/analyzer.ts`
+- `packages/interview-engine/src/adaptive/decision-maker.ts`
+- `packages/interview-engine/src/adaptive/question-selector.ts`
+- `packages/interview-engine/src/adaptive/fallback-handler.ts`
+- `packages/interview-engine/src/adaptive/adaptive-engine.ts`
+- `packages/interview-engine/src/adaptive/adaptive-engine.test.ts`
 - `packages/interview-engine/src/index.ts`
 - `apps/agent/src/realtime-session.ts`
 - `apps/agent/src/index.spec.ts`

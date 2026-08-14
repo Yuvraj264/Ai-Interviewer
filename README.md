@@ -4,13 +4,13 @@ Production-oriented AI Voice Interviewer platform designed to conduct interactiv
 
 ---
 
-## Current Status: Phase 5 — Interview State Machine & Interview Engine
+## Current Status: Phase 6 — Adaptive Questioning Engine
 
-The repository is currently at **Phase 5 (Interview State Machine & Interview Engine)**. The system enforces a deterministic, environment-independent interview state machine (`@ai-interviewer/interview-engine`) that controls interview stages (`INTRO` -> `BACKGROUND` -> `PROJECT_DEEP_DIVE` -> `TECHNICAL` -> `BEHAVIORAL` -> `CLOSING`), question lifecycles, time limits, topic tracking, and question budgets. **The LLM does NOT own interview state**—it delivers conversational voice responses for engine-selected questions.
+The repository is currently at **Phase 6 (Adaptive Questioning Engine)**. The system features an evidence-grounded adaptive questioning pipeline (`@ai-interviewer/interview-engine/adaptive`) that dynamically analyzes candidate answers for technical depth, missing concepts, and evidence claims to propose adaptive actions (`FOLLOW_UP`, `PROBE`, `CLARIFY`, `INCREASE_DIFFICULTY`, `DECREASE_DIFFICULTY`, `NEW_TOPIC`). **The LLM does NOT directly modify interview state**—all proposals are validated by the deterministic `InterviewEngine` with mandatory fallback guarantees.
 
 ---
 
-## System Architecture (Phase 5)
+## System Architecture (Phase 6)
 
 ```text
 Candidate Speech
@@ -19,13 +19,14 @@ Browser Microphone (WebRTC)
        ↓
 LiveKit Room ◄───────► Realtime Agent (apps/agent)
                             │
-                    Interview Engine (@ai-interviewer/interview-engine)
+                    Adaptive Questioning Engine
+                    (Answer Analysis -> Evidence Extraction -> Adaptive Decision)
                             │
-                    Deterministic State Machine
-                    (Stages, Question Budget, Time Limit)
+                    Interview Engine Validation & Difficulty Bounds Check
+                    (Stages, Question Budget, Difficulty Rules)
                             │
                     OpenAI Realtime (gpt-4o-realtime-preview)
-                    (Conversational Phrasing Only)
+                    (Conversational Voice Phrasing)
 ```
 
 ---
@@ -70,9 +71,8 @@ pnpm build
 
 ---
 
-## What Has NOT Been Implemented Yet (Intentionally Excluded in Phase 5)
+## What Has NOT Been Implemented Yet (Intentionally Excluded in Phase 6)
 
-- Adaptive difficulty scaling based on answer quality (Phase 6)
-- Candidate scoring & hiring recommendation report (Phase 8)
-- Resume & Job Description intelligence
+- Resume & Job Description intelligence (Phase 7)
+- Candidate scoring & recruiter evaluation report (Phase 8)
 - Recruiter analytics dashboard

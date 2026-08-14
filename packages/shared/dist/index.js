@@ -4074,7 +4074,7 @@ var createSessionSchema = external_exports.object({
 });
 
 // src/index.ts
-var PROJECT_PHASE = "Phase 5 \u2014 Interview State Machine & Interview Engine";
+var PROJECT_PHASE = "Phase 6 \u2014 Adaptive Questioning Engine";
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   PROJECT_PHASE,

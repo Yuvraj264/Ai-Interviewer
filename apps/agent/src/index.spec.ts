@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { AgentWorker } from './index';
 
-describe('AgentWorker & InterviewEngine Integration', () => {
+describe('AgentWorker & Phase 6 Adaptive Engine Integration', () => {
   let worker: AgentWorker;
 
   beforeEach(() => {
@@ -15,30 +15,35 @@ describe('AgentWorker & InterviewEngine Integration', () => {
     expect(status.openaiConfigured).toBe(true);
   });
 
-  it('should support joining room and executing InterviewEngine controlled question turns', async () => {
+  it('should support joining room and executing Adaptive Engine answer analysis loop', async () => {
     await worker.start();
-    const room = await worker.joinRoom('sess_engine_agent_123', {
+    const room = await worker.joinRoom('sess_adapt_agent_123', {
       candidateName: 'Sam Tech',
       role: 'Staff Engineer',
       interviewType: 'technical',
     });
 
-    expect(room.roomName).toBe('interview:sess_engine_agent_123');
+    expect(room.roomName).toBe('interview:sess_adapt_agent_123');
 
-    const session = worker.getSession('sess_engine_agent_123');
+    const session = worker.getSession('sess_adapt_agent_123');
     expect(session).toBeDefined();
 
     const engineState = session!.getEngineState();
     expect(engineState.stage).toBe('INTRO');
     expect(engineState.questionsAsked).toBe(1);
 
-    // Simulate candidate turn
-    session!.handleCandidateTurnCompleted('I have 5 years experience in full stack development.');
+    // Simulate candidate turn with technical answer
+    await session!.handleCandidateTurnCompleted('I used Redis caching and PostgreSQL in Node.');
     
-    const engineState2 = session!.getEngineState();
-    expect(engineState2.questionsAsked).toBeGreaterThanOrEqual(2);
+    const adaptiveRecords = session!.getAdaptiveRecords();
+    expect(adaptiveRecords.length).toBe(1);
+    expect(adaptiveRecords[0].analysis.qualityCategory).toBe('STRONG');
+    expect(adaptiveRecords[0].decision.action).toBeDefined();
 
-    await worker.leaveRoom('sess_engine_agent_123');
+    const telemetry = session!.getTelemetry();
+    expect(telemetry.totalAdaptiveLatencyMs).toBeGreaterThanOrEqual(0);
+
+    await worker.leaveRoom('sess_adapt_agent_123');
     expect(worker.getStatus().activeSessions).toBe(0);
 
     await worker.stop();

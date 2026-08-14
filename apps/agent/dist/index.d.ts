@@ -1,8 +1,11 @@
-import { AiConversationState, InterviewEngineState, TranscriptItem, SystemHealth } from '@ai-interviewer/shared';
+import { AiConversationState, InterviewEngineState, TranscriptItem, AdaptiveDecisionRecord, SystemHealth } from '@ai-interviewer/shared';
 import { InterviewerPromptContext } from '@ai-interviewer/interview-engine';
 
 interface LatencyTelemetry {
     candidateTurnEndTimestamp?: number;
+    analysisLatencyMs?: number;
+    decisionLatencyMs?: number;
+    totalAdaptiveLatencyMs?: number;
     firstAiAudioTimestamp?: number;
     timeToFirstAudioMs?: number;
 }
@@ -11,17 +14,21 @@ declare class RealtimeVoiceSession {
     readonly roomName: string;
     readonly agentIdentity: string;
     private engine;
+    private adaptiveEngine;
     private conversationState;
     private transcript;
     private telemetry;
+    private adaptiveRecords;
+    private signalHistory;
     constructor(sessionId: string, promptContext?: InterviewerPromptContext);
     startSession(): Promise<void>;
     speak(text: string): Promise<void>;
     handleCandidateTurnStarted(): void;
-    handleCandidateTurnCompleted(candidateText: string): void;
+    handleCandidateTurnCompleted(candidateText: string): Promise<void>;
     getState(): AiConversationState;
     getEngineState(): InterviewEngineState;
     getTranscript(): TranscriptItem[];
+    getAdaptiveRecords(): AdaptiveDecisionRecord[];
     getTelemetry(): LatencyTelemetry;
     stopSession(): Promise<void>;
 }

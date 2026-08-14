@@ -109,7 +109,7 @@ export const InterviewShell: React.FC<InterviewShellProps> = ({ session, onCompl
       {/* Shell Header */}
       <div className="shell-header">
         <div>
-          <div className="shell-title">{session.role} Structured Interview</div>
+          <div className="shell-title">{session.role} Adaptive Voice Interview</div>
           <span style={{ fontSize: '12px', color: '#94a3b8', textTransform: 'capitalize' }}>
             {session.type} Mode • Candidate: {session.candidateName}
           </span>
@@ -123,7 +123,7 @@ export const InterviewShell: React.FC<InterviewShellProps> = ({ session, onCompl
         </div>
       </div>
 
-      {/* Realtime Transport & Engine Stage Dashboard */}
+      {/* Realtime Transport & Adaptive Engine Dashboard */}
       <div
         style={{
           display: 'flex',
@@ -170,6 +170,21 @@ export const InterviewShell: React.FC<InterviewShellProps> = ({ session, onCompl
             }}
           >
             ⚙️ Stage: {currentEngineStage}
+          </div>
+
+          {/* Adaptive Questioning Badge */}
+          <div
+            className="badge"
+            style={{
+              margin: 0,
+              padding: '4px 10px',
+              fontSize: '11px',
+              backgroundColor: 'rgba(34, 197, 94, 0.15)',
+              borderColor: 'rgba(34, 197, 94, 0.3)',
+              color: '#4ade80',
+            }}
+          >
+            ⚡ Adaptive: Active
           </div>
 
           {/* AI Voice State Badge */}
@@ -224,7 +239,7 @@ export const InterviewShell: React.FC<InterviewShellProps> = ({ session, onCompl
       {/* Progress Bar */}
       <div className="progress-container">
         <div className="progress-header">
-          <span>ENGINE STAGE PROGRESS</span>
+          <span>ADAPTIVE ENGINE STAGE PROGRESS</span>
           <span>
             Question {interviewerState.currentQuestionIndex + 1} of {interviewerState.totalQuestions} ({interviewerState.progressPercentage}%)
           </span>
@@ -241,7 +256,7 @@ export const InterviewShell: React.FC<InterviewShellProps> = ({ session, onCompl
           <div>
             <div className="interviewer-name">AI Interviewer</div>
             <span style={{ fontSize: '11px', color: '#38bdf8' }}>
-              Interview Engine (Stateful) • OpenAI Realtime (gpt-4o-realtime-preview)
+              Adaptive Questioning Engine • OpenAI Realtime (gpt-4o-realtime-preview)
             </span>
           </div>
         </div>
@@ -252,7 +267,7 @@ export const InterviewShell: React.FC<InterviewShellProps> = ({ session, onCompl
       {/* Realtime Speech Transcript Feed */}
       <div style={{ textAlign: 'left', marginTop: '24px' }}>
         <div style={{ fontWeight: 600, fontSize: '14px', color: '#f8fafc', marginBottom: '10px' }}>
-          Live Conversation Transcript:
+          Live Adaptive Conversation Transcript:
         </div>
         <div
           style={{
