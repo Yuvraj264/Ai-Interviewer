@@ -1,4 +1,7 @@
 export * from './prompts/interviewer';
+export * from './bank/questions';
+export * from './engine/domain-errors';
+export * from './engine/interview-engine';
 
 export interface InterviewInteractionProvider {
   start(): Promise<void>;

@@ -45,25 +45,33 @@ The AI Interviewer platform is a production-oriented system for conducting real-
 2. **Interviewer Persona Prompt Module (`packages/interview-engine`)**: Created `buildInterviewerInstructions` in `packages/interview-engine/src/prompts/interviewer.ts` enforcing 1–3 spoken sentence responses, single question per turn, active listening, brief acknowledgments, and professional tone.
 3. **Turn Detection & Interruption / Barge-in**: Enabled native turn detection and interruption handling. When candidate speaks during AI speech, AI output immediately stops and state transitions to `INTERRUPTED` -> `LISTENING`.
 4. **Latency Measurement**: Instrumented telemetry measuring `time_to_first_audio` (candidate turn end timestamp -> first AI audio byte). Median benchmark: ~210 ms.
-5. **Candidate UI Voice Dashboard (`apps/web`)**: Enhanced `InterviewShell` with AI Voice Conversation Status badge (`LISTENING`, `THINKING`, `SPEAKING`, `INTERRUPTED`), live transcript feed, and speaker playback.
 
-### Architectural Decisions & Security
-- **Why OpenAI Realtime Was Selected**: Provides native speech-to-speech interaction, eliminating intermediate STT -> LLM -> TTS latency penalties.
-- **Why LiveKit Remains Transport**: LiveKit handles WebRTC browser connectivity, room scaling, and low-latency audio packet delivery.
-- **Strict Key Security**: `OPENAI_API_KEY` exists ONLY on the server/agent worker process. The browser client receives only LiveKit participant tokens and NEVER sees `OPENAI_API_KEY`.
-- **Configurable Model & Voice**: Environment variables `OPENAI_REALTIME_MODEL` (`gpt-4o-realtime-preview`) and `OPENAI_REALTIME_VOICE` (`alloy`).
+---
 
-### Dependencies Audit
-- `@livekit/agents` (`^0.8.0`): LiveKit Agents Framework for Node.js (MIT License)
-- `@livekit/agents-plugin-openai` (`^0.8.0`): OpenAI Realtime plugin for LiveKit Agents (Apache-2.0 License)
-- `livekit-client` (`^2.1.3`): Browser WebRTC LiveKit SDK (Apache-2.0 License)
+## Phase 5 Implementation Record
+
+### What Was Built
+1. **Interview Engine State Machine (`packages/interview-engine`)**: Built deterministic `InterviewEngine` class managing explicit stages (`CREATED` -> `WAITING` -> `INTRO` -> `BACKGROUND` -> `PROJECT_DEEP_DIVE` -> `TECHNICAL` -> `BEHAVIORAL` -> `CLOSING` -> `COMPLETING` -> `COMPLETED`).
+2. **Structured Question Bank**: Implemented `QUESTION_BANK` in `packages/interview-engine/src/bank/questions.ts` with stable question IDs (`q_intro_01`, `q_tech_rest_01`, etc.) categorized by stage and topic.
+3. **Domain Error Model**: Created structured error classes (`InvalidTransitionError`, `QuestionBudgetExceededError`, `InterviewAlreadyCompletedError`).
+4. **Agent ↔ Engine Integration**: Integrated `InterviewEngine` into `RealtimeVoiceSession` inside `apps/agent`. The Agent queries the Engine for allowed next questions, while the LLM delivers conversational voice phrasing.
+5. **Multi-Session Isolation & Idempotency**: State machine is pure and instance-isolated. Duplicate transition calls or completed answer events do not double-increment counts or skip stages.
+
+### Architectural Decisions
+- **LLM Does NOT Own Interview State**: The Interview Engine strictly validates and applies all state transitions, time limits, and question budgets (`maxQuestions`).
+- **Provider Independence**: `@ai-interviewer/interview-engine` has zero dependencies on React, browser APIs, LiveKit, or OpenAI SDKs.
+- **Completion Precedence Policy**: Explicit candidate end > System failure > Time limit reached > Question budget exhausted > Normal completion.
+
+### Testing & Verification
+- Unit tests for all valid stage transitions, invalid transition rejections, question budget caps, time limits, idempotency, and multi-session isolation (Session A vs Session B).
+- Full workspace verification: `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm build`.
 
 ### Known Limitations
-Phase 4 establishes two-way voice interaction only. It explicitly does **NOT** contain:
-- Adaptive interview state machines or multi-stage transitions
-- Resume or job description intelligence
-- Candidate scoring or hiring recommendations
-- Audio recording or persistent transcript storage in database
+Phase 5 establishes structured state control only. It explicitly does **NOT** contain:
+- Adaptive question selection based on answer quality (difficulty scaling)
+- Answer scoring or candidate performance evaluation
+- Resume intelligence or Job Description parsing
+- Persistent database analytics reports
 
 ### Next Phase
-**Phase 5 — Interview State Machine**
+**Phase 6 — Adaptive Questioning**

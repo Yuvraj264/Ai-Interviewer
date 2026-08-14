@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useMemo } from 'react';
-import { InterviewSession, TranscriptItem } from '@ai-interviewer/shared';
+import { InterviewSession, TranscriptItem, InterviewStage } from '@ai-interviewer/shared';
 import { MockInterviewer, MockInterviewerState } from '@ai-interviewer/interview-engine';
 import { useRealtimeAudio } from '@/hooks/useRealtimeAudio';
 import { SessionTimer } from './SessionTimer';
@@ -20,6 +20,12 @@ export const InterviewShell: React.FC<InterviewShellProps> = ({ session, onCompl
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [localTranscript, setLocalTranscript] = useState<TranscriptItem[]>([]);
 
+  const currentEngineStage: InterviewStage = useMemo(() => {
+    if (interviewerState.isCompleted) return 'COMPLETED';
+    const stages: InterviewStage[] = ['INTRO', 'BACKGROUND', 'TECHNICAL', 'BEHAVIORAL', 'CLOSING'];
+    return stages[interviewerState.currentQuestionIndex] || 'TECHNICAL';
+  }, [interviewerState.currentQuestionIndex, interviewerState.isCompleted]);
+
   const {
     connectionState,
     micState,
@@ -35,7 +41,6 @@ export const InterviewShell: React.FC<InterviewShellProps> = ({ session, onCompl
   }, [connectRealtime]);
 
   useEffect(() => {
-    // Initialize transcript with initial AI greeting
     setLocalTranscript([
       {
         id: `tx_init_${Date.now()}`,
@@ -50,7 +55,6 @@ export const InterviewShell: React.FC<InterviewShellProps> = ({ session, onCompl
     interviewer.onStateChange((newState) => {
       setInterviewerState(newState);
 
-      // Append AI question to transcript on state change
       if (newState.currentQuestion && !newState.isCompleted) {
         setLocalTranscript((prev) => [
           ...prev,
@@ -76,7 +80,6 @@ export const InterviewShell: React.FC<InterviewShellProps> = ({ session, onCompl
     if (!response.trim() || isSubmitting) return;
     setIsSubmitting(true);
 
-    // Append candidate turn to transcript
     setLocalTranscript((prev) => [
       ...prev,
       {
@@ -106,7 +109,7 @@ export const InterviewShell: React.FC<InterviewShellProps> = ({ session, onCompl
       {/* Shell Header */}
       <div className="shell-header">
         <div>
-          <div className="shell-title">{session.role} Voice Interview</div>
+          <div className="shell-title">{session.role} Structured Interview</div>
           <span style={{ fontSize: '12px', color: '#94a3b8', textTransform: 'capitalize' }}>
             {session.type} Mode • Candidate: {session.candidateName}
           </span>
@@ -120,7 +123,7 @@ export const InterviewShell: React.FC<InterviewShellProps> = ({ session, onCompl
         </div>
       </div>
 
-      {/* Realtime Transport & AI Voice Status Bar */}
+      {/* Realtime Transport & Engine Stage Dashboard */}
       <div
         style={{
           display: 'flex',
@@ -152,6 +155,21 @@ export const InterviewShell: React.FC<InterviewShellProps> = ({ session, onCompl
               }}
             ></span>
             <span>WebRTC: {connectionState}</span>
+          </div>
+
+          {/* Engine Stage Badge */}
+          <div
+            className="badge"
+            style={{
+              margin: 0,
+              padding: '4px 10px',
+              fontSize: '11px',
+              backgroundColor: 'rgba(168, 85, 247, 0.15)',
+              borderColor: 'rgba(168, 85, 247, 0.3)',
+              color: '#c084fc',
+            }}
+          >
+            ⚙️ Stage: {currentEngineStage}
           </div>
 
           {/* AI Voice State Badge */}
@@ -206,7 +224,7 @@ export const InterviewShell: React.FC<InterviewShellProps> = ({ session, onCompl
       {/* Progress Bar */}
       <div className="progress-container">
         <div className="progress-header">
-          <span>INTERVIEW PROGRESS</span>
+          <span>ENGINE STAGE PROGRESS</span>
           <span>
             Question {interviewerState.currentQuestionIndex + 1} of {interviewerState.totalQuestions} ({interviewerState.progressPercentage}%)
           </span>
@@ -223,7 +241,7 @@ export const InterviewShell: React.FC<InterviewShellProps> = ({ session, onCompl
           <div>
             <div className="interviewer-name">AI Interviewer</div>
             <span style={{ fontSize: '11px', color: '#38bdf8' }}>
-              OpenAI Realtime (gpt-4o-realtime-preview) • Voice: Alloy
+              Interview Engine (Stateful) • OpenAI Realtime (gpt-4o-realtime-preview)
             </span>
           </div>
         </div>

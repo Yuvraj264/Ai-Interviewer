@@ -4,28 +4,28 @@ Production-oriented AI Voice Interviewer platform designed to conduct interactiv
 
 ---
 
-## Current Status: Phase 4 — First End-to-End Voice Interview
+## Current Status: Phase 5 — Interview State Machine & Interview Engine
 
-The repository is currently at **Phase 4 (First End-to-End Voice Interview)**. Candidates can engage in a natural, multi-turn, two-way spoken conversation with an AI interviewer powered by OpenAI Realtime (`gpt-4o-realtime-preview`) and LiveKit WebRTC audio transport, with interruption/barge-in support, concise responses (1–3 sentences), live transcripts, and latency tracking.
+The repository is currently at **Phase 5 (Interview State Machine & Interview Engine)**. The system enforces a deterministic, environment-independent interview state machine (`@ai-interviewer/interview-engine`) that controls interview stages (`INTRO` -> `BACKGROUND` -> `PROJECT_DEEP_DIVE` -> `TECHNICAL` -> `BEHAVIORAL` -> `CLOSING`), question lifecycles, time limits, topic tracking, and question budgets. **The LLM does NOT own interview state**—it delivers conversational voice responses for engine-selected questions.
 
 ---
 
-## Voice Interview Architecture (Phase 4)
+## System Architecture (Phase 5)
 
 ```text
-Candidate Speaker ◄─────── WebRTC ───────┐
-                                          │
-Candidate Microphone ────► WebRTC ────► LiveKit Room
-                                          │
-                                          ▼
-                                   Agent Worker
-                                          │
-                                  OPENAI_API_KEY
-                                  (Server-Only)
-                                          │
-                                          ▼
-                                  OpenAI Realtime
-                               (gpt-4o-realtime-preview)
+Candidate Speech
+       ↓
+Browser Microphone (WebRTC)
+       ↓
+LiveKit Room ◄───────► Realtime Agent (apps/agent)
+                            │
+                    Interview Engine (@ai-interviewer/interview-engine)
+                            │
+                    Deterministic State Machine
+                    (Stages, Question Budget, Time Limit)
+                            │
+                    OpenAI Realtime (gpt-4o-realtime-preview)
+                    (Conversational Phrasing Only)
 ```
 
 ---
@@ -70,9 +70,9 @@ pnpm build
 
 ---
 
-## What Has NOT Been Implemented Yet (Intentionally Excluded in Phase 4)
+## What Has NOT Been Implemented Yet (Intentionally Excluded in Phase 5)
 
-- Adaptive interview state machine & scoring
-- Resume intelligence & Job Description intelligence
-- Recruiter dashboard & candidate ranking
-- Persistent audio recording & S3 uploads
+- Adaptive difficulty scaling based on answer quality (Phase 6)
+- Candidate scoring & hiring recommendation report (Phase 8)
+- Resume & Job Description intelligence
+- Recruiter analytics dashboard

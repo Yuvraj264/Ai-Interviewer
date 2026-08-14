@@ -1,34 +1,39 @@
 import { describe, it, expect } from 'vitest';
-import { PROJECT_PHASE, AiConversationState, TranscriptItem } from './index';
+import { PROJECT_PHASE, InterviewStage, EngineQuestion } from './index';
 
-describe('Shared Package Phase 4 Contracts', () => {
-  it('should export current Phase 4 project phase constant', () => {
-    expect(PROJECT_PHASE).toBe('Phase 4 — First End-to-End Voice Interview');
+describe('Shared Package Phase 5 Contracts', () => {
+  it('should export current Phase 5 project phase constant', () => {
+    expect(PROJECT_PHASE).toBe('Phase 5 — Interview State Machine & Interview Engine');
   });
 
-  it('should support valid AiConversationState values', () => {
-    const states: AiConversationState[] = [
-      'IDLE',
-      'CONNECTING',
-      'LISTENING',
-      'THINKING',
-      'SPEAKING',
-      'INTERRUPTED',
-      'RECONNECTING',
-      'ERROR',
-      'ENDING',
+  it('should support valid InterviewStage enum values', () => {
+    const stages: InterviewStage[] = [
+      'CREATED',
+      'WAITING',
+      'INTRO',
+      'BACKGROUND',
+      'PROJECT_DEEP_DIVE',
+      'TECHNICAL',
+      'BEHAVIORAL',
+      'CLOSING',
+      'COMPLETING',
+      'COMPLETED',
+      'CANCELLED',
+      'FAILED',
     ];
-    expect(states.length).toBe(9);
+    expect(stages.length).toBe(12);
   });
 
-  it('should validate TranscriptItem shape', () => {
-    const item: TranscriptItem = {
-      id: 'tx_123',
-      speaker: 'ai',
-      text: 'Tell me about yourself.',
-      timestamp: new Date().toISOString(),
+  it('should validate EngineQuestion contract', () => {
+    const q: EngineQuestion = {
+      id: 'tech_rest_01',
+      stage: 'TECHNICAL',
+      topic: 'rest-api',
+      difficulty: 'medium',
+      prompt: 'Explain what a REST API is.',
+      objective: 'Evaluate REST architecture understanding.',
     };
-    expect(item.speaker).toBe('ai');
-    expect(item.text).toContain('yourself');
+    expect(q.id).toBe('tech_rest_01');
+    expect(q.difficulty).toBe('medium');
   });
 });

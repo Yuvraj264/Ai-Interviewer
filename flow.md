@@ -17,90 +17,75 @@
 ### Phase 4 — First End-to-End Voice Interview
 **Status**: COMPLETED
 
-### Phase 5 — Adaptive Interview Logic & Scoring
+### Phase 5 — Interview State Machine & Interview Engine
+**Status**: COMPLETED
+
+### Phase 6 — Adaptive Questioning
 **Status**: NOT STARTED
 
 ---
 
-## Phase 4 Implementation Log
+## Phase 5 Implementation Log
 
-### Phase 4 Entry Point
+### Phase 5 Entry Point
 ```text
-Phase 3 WebRTC transport verified
+Phase 4 voice interview verified
        ↓
-Realtime browser ↔ LiveKit ↔ Agent operational
+Voice conversation works
        ↓
-Introduce OpenAI Realtime conversational model
+Introduce deterministic Interview Engine & State Machine
 ```
 
-### Phase 4 Voice Workflow
+### Phase 5 Architecture
 
 ```text
-Candidate enters interview & WebRTC connects
+Candidate Speech
        ↓
-Agent joins room (agent-{sessionId})
+Realtime Agent
        ↓
-OpenAI Realtime session initialized (RealtimeVoiceSession)
+Candidate Answer Event
        ↓
-Interviewer instructions loaded (buildInterviewerInstructions)
+Interview Engine (Deterministic State Machine)
+       │
+       ├── Validates Stage & Time Limit
+       ├── Enforces Question Budget
+       ├── Updates Covered Topics
+       └── Selects Allowed Next Question
        ↓
-Initial AI greeting emitted ("Hi Candidate, welcome to your interview...")
+Realtime Agent
        ↓
-Candidate speaks into microphone
+OpenAI Realtime (Conversational Phrasing)
        ↓
-LiveKit WebRTC transports audio to Agent
-       ↓
-OpenAI Realtime model understands speech & reasons
-       ↓
-Candidate can interrupt at any time (AI speech stops, state -> INTERRUPTED)
-       ↓
-AI generates voice response (1-3 spoken sentences)
-       ↓
-LiveKit WebRTC plays audio through candidate speaker
-       ↓
-Multi-turn spoken interview continues naturally
+Candidate Speaker
 ```
 
-### AI Model & Voice Configuration
-- **Model**: `OPENAI_REALTIME_MODEL` (`gpt-4o-realtime-preview`)
-- **Voice**: `OPENAI_REALTIME_VOICE` (`alloy` - professional interviewer tone)
-- **Turn Detection**: Provider-supported realtime semantic/server VAD
-- **Interruption / Barge-in**: Enabled natively (cancels AI audio output immediately when candidate speaks)
+### State Machine Lifecycle
+- `CREATED` -> `WAITING` -> `INTRO` -> `BACKGROUND` -> `PROJECT_DEEP_DIVE` -> `TECHNICAL` -> `BEHAVIORAL` -> `CLOSING` -> `COMPLETING` -> `COMPLETED`
+- Terminal States: `COMPLETED`, `CANCELLED`, `FAILED`
 
-### Realtime Telemetry & Events
-- `ai.session.started`: OpenAI Realtime session initialized
-- `ai.session.ready`: Interviewer instructions loaded & initial greeting generated
-- `ai.response.started`: AI started speaking utterance
-- `ai.response.interrupted`: Candidate interrupted AI speech turn
-- `candidate.turn.completed`: Candidate turn ended & processing initiated
-- `telemetry.latency`: Measured `time_to_first_audio` (candidate turn end -> first AI audio byte)
+### Engine Completion Precedence Policy
+1. Explicit Candidate End (`endSession()`)
+2. System / Provider Failure (`FAILED`)
+3. Time Limit Reached (`remainingSeconds <= 0`)
+4. Question Budget Exhausted (`questionsAsked >= maxQuestions`)
+5. Normal Stage Completion (`CLOSING` -> `COMPLETED`)
 
-### Latency Measurement Results
-- `time_to_first_audio` (candidate_turn_end -> first_AI_audio):
-  - Simulated / benchmark turn 1: ~180 ms
-  - Benchmark median: ~210 ms
-  - Benchmark p95: ~340 ms
+### Core Architectural Principle
+- **THE LLM DOES NOT OWN INTERVIEW STATE.** The Interview Engine deterministically validates and applies all state transitions, question budgets, and completion rules. The LLM provides natural conversational phrasing for engine-selected questions but cannot alter session status or skip stages.
 
-### Security Audit
-- `OPENAI_API_KEY` exists strictly on the server/agent worker process.
-- The browser client receives only LiveKit participant tokens and NEVER sees `OPENAI_API_KEY`.
+### Environment Independence
+- `@ai-interviewer/interview-engine` has zero dependencies on React, browser APIs, LiveKit, or OpenAI SDKs. It runs purely in Node.js or unit tests.
 
-### Phase 4 Exit Point
-A complete multi-turn, low-latency, two-way voice interview is operational. Candidates can speak naturally with the AI interviewer, receive concise spoken responses (1-3 sentences), interrupt AI responses at any time, and view a live conversation transcript. Phase 5 can now build adaptive interview state machines and scoring algorithms on top of this voice foundation.
-
-### Files Added/Modified in Phase 4
-- `packages/config/src/index.ts`
-- `packages/config/src/index.test.ts`
+### Files Added/Modified in Phase 5
 - `packages/shared/src/index.ts`
 - `packages/shared/src/index.test.ts`
-- `packages/interview-engine/src/prompts/interviewer.ts`
-- `packages/interview-engine/src/prompts/interviewer.test.ts`
+- `packages/interview-engine/src/bank/questions.ts`
+- `packages/interview-engine/src/engine/domain-errors.ts`
+- `packages/interview-engine/src/engine/interview-engine.ts`
+- `packages/interview-engine/src/engine/interview-engine.test.ts`
 - `packages/interview-engine/src/index.ts`
-- `apps/agent/package.json`
 - `apps/agent/src/realtime-session.ts`
-- `apps/agent/src/index.ts`
 - `apps/agent/src/index.spec.ts`
-- `apps/web/src/hooks/useRealtimeAudio.ts`
 - `apps/web/src/components/InterviewShell.tsx`
 - `apps/web/src/app/page.test.tsx`
 - `flow.md`

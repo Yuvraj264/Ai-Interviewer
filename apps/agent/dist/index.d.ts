@@ -1,4 +1,4 @@
-import { AiConversationState, TranscriptItem, SystemHealth } from '@ai-interviewer/shared';
+import { AiConversationState, InterviewEngineState, TranscriptItem, SystemHealth } from '@ai-interviewer/shared';
 import { InterviewerPromptContext } from '@ai-interviewer/interview-engine';
 
 interface LatencyTelemetry {
@@ -10,16 +10,17 @@ declare class RealtimeVoiceSession {
     readonly sessionId: string;
     readonly roomName: string;
     readonly agentIdentity: string;
+    private engine;
     private conversationState;
     private transcript;
     private telemetry;
-    private activeGreeting;
     constructor(sessionId: string, promptContext?: InterviewerPromptContext);
     startSession(): Promise<void>;
     speak(text: string): Promise<void>;
     handleCandidateTurnStarted(): void;
     handleCandidateTurnCompleted(candidateText: string): void;
     getState(): AiConversationState;
+    getEngineState(): InterviewEngineState;
     getTranscript(): TranscriptItem[];
     getTelemetry(): LatencyTelemetry;
     stopSession(): Promise<void>;

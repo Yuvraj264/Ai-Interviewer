@@ -1,9 +1,52 @@
+import { EngineQuestion, InterviewType, InterviewConfig, InterviewEngineState, InterviewStage } from '@ai-interviewer/shared';
+
 interface InterviewerPromptContext {
     candidateName?: string;
     role?: string;
     interviewType?: string;
 }
 declare function buildInterviewerInstructions(context?: InterviewerPromptContext): string;
+
+declare const QUESTION_BANK: EngineQuestion[];
+declare function getQuestionsForType(type: InterviewType): EngineQuestion[];
+
+declare class InvalidTransitionError extends Error {
+    readonly currentStage: string;
+    readonly targetStage: string;
+    constructor(currentStage: string, targetStage: string, reason?: string);
+}
+declare class QuestionBudgetExceededError extends Error {
+    readonly maxQuestions: number;
+    constructor(maxQuestions: number);
+}
+declare class InterviewAlreadyCompletedError extends Error {
+    readonly sessionId: string;
+    constructor(sessionId: string);
+}
+declare class SessionNotFoundError extends Error {
+    readonly sessionId: string;
+    constructor(sessionId: string);
+}
+
+declare class InterviewEngine {
+    readonly sessionId: string;
+    private config;
+    private status;
+    private stage;
+    private currentQuestion?;
+    private currentQuestionState?;
+    private coveredTopics;
+    private askedQuestionIds;
+    private startedAtTimestamp?;
+    private isCompleted;
+    constructor(sessionId: string, config?: Partial<InterviewConfig>);
+    startInterview(): InterviewEngineState;
+    nextQuestion(): EngineQuestion | null;
+    submitAnswer(questionId: string, _answerText: string): InterviewEngineState;
+    transition(targetStage: InterviewStage): void;
+    completeInterview(): InterviewEngineState;
+    getState(): InterviewEngineState;
+}
 
 interface InterviewInteractionProvider {
     start(): Promise<void>;
@@ -45,4 +88,4 @@ declare class MockInterviewer implements InterviewInteractionProvider {
     private notifyState;
 }
 
-export { type InterviewInteractionProvider, type InterviewerPromptContext, MockInterviewer, type MockInterviewerState, buildInterviewerInstructions };
+export { InterviewAlreadyCompletedError, InterviewEngine, type InterviewInteractionProvider, type InterviewerPromptContext, InvalidTransitionError, MockInterviewer, type MockInterviewerState, QUESTION_BANK, QuestionBudgetExceededError, SessionNotFoundError, buildInterviewerInstructions, getQuestionsForType };

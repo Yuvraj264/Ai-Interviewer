@@ -33,31 +33,34 @@ var RealtimeVoiceSession = class {
   sessionId;
   roomName;
   agentIdentity;
+  engine;
   conversationState = "IDLE";
   transcript = [];
   telemetry = {};
-  activeGreeting;
   constructor(sessionId, promptContext) {
     this.sessionId = sessionId;
     this.roomName = `interview:${sessionId}`;
     this.agentIdentity = `agent-${sessionId}`;
+    this.engine = new import_interview_engine.InterviewEngine(sessionId, {
+      type: promptContext?.interviewType || "technical",
+      durationMinutes: 20,
+      maxQuestions: 6
+    });
     const instructions = (0, import_interview_engine.buildInterviewerInstructions)(promptContext);
-    const candidateName = promptContext?.candidateName || "Candidate";
-    const role = promptContext?.role || "Software Engineer";
-    this.activeGreeting = `Hi ${candidateName}, welcome to your interview for the ${role} position. I'm your AI interviewer today. To get started, could you briefly introduce yourself?`;
     const env = (0, import_config.getValidatedEnv)();
     if (!env.OPENAI_API_KEY) {
       console.warn(`[Realtime Voice Session ${sessionId}] Warning: OPENAI_API_KEY is not configured. Running in simulated voice agent mode.`);
     }
-    console.log(`[Realtime Voice Session ${sessionId}] Configured OpenAI Model: ${env.OPENAI_REALTIME_MODEL}, Voice: ${env.OPENAI_REALTIME_VOICE}`);
-    console.log(`[Realtime Voice Session ${sessionId}] Instructions length: ${instructions.length} chars`);
+    console.log(`[Realtime Voice Session ${sessionId}] Engine initialized. Prompt length: ${instructions.length} chars`);
   }
   async startSession() {
     this.conversationState = "CONNECTING";
     console.log(`[Realtime Voice Session ${this.sessionId}] [ai.session.started] Connecting to room ${this.roomName}...`);
+    const engineState = this.engine.startInterview();
     this.conversationState = "THINKING";
-    console.log(`[Realtime Voice Session ${this.sessionId}] [ai.session.ready] Generating initial greeting...`);
-    await this.speak(this.activeGreeting);
+    const currentQ = engineState.currentQuestion;
+    const greetingText = currentQ ? currentQ.prompt : `Hi, welcome to your interview. I'm your AI interviewer today. To get started, could you briefly introduce yourself?`;
+    await this.speak(greetingText);
   }
   async speak(text) {
     this.conversationState = "SPEAKING";
@@ -67,7 +70,7 @@ var RealtimeVoiceSession = class {
       this.telemetry.timeToFirstAudioMs = this.telemetry.firstAiAudioTimestamp - this.telemetry.candidateTurnEndTimestamp;
       console.log(`[Realtime Voice Session ${this.sessionId}] [telemetry.latency] time_to_first_audio: ${this.telemetry.timeToFirstAudioMs} ms`);
     }
-    console.log(`[Realtime Voice Session ${this.sessionId}] [ai.response.started] AI Speaking: "${text}"`);
+    console.log(`[Realtime Voice Session ${this.sessionId}] [ai.response.started] AI Speaking (Stage: ${this.engine.getState().stage}): "${text}"`);
     this.transcript.push({
       id: `tx_ai_${Date.now()}`,
       speaker: "ai",
@@ -94,9 +97,23 @@ var RealtimeVoiceSession = class {
       timestamp: (/* @__PURE__ */ new Date()).toISOString()
     });
     this.conversationState = "THINKING";
+    const currentQ = this.engine.getState().currentQuestion;
+    if (currentQ) {
+      this.engine.submitAnswer(currentQ.id, candidateText);
+    }
+    const nextQ = this.engine.nextQuestion();
+    if (nextQ) {
+      this.speak(nextQ.prompt);
+    } else {
+      this.speak("Thank you for completing all questions. The interview session is now complete.");
+      this.stopSession();
+    }
   }
   getState() {
     return this.conversationState;
+  }
+  getEngineState() {
+    return this.engine.getState();
   }
   getTranscript() {
     return [...this.transcript];
@@ -106,6 +123,7 @@ var RealtimeVoiceSession = class {
   }
   async stopSession() {
     this.conversationState = "ENDING";
+    this.engine.completeInterview();
     console.log(`[Realtime Voice Session ${this.sessionId}] [ai.session.ended] Session stopped cleanly.`);
     this.conversationState = "IDLE";
   }
