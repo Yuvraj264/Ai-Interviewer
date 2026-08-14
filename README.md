@@ -4,19 +4,30 @@ Production-oriented AI Voice Interviewer platform designed to conduct interactiv
 
 ---
 
-## Current Status: Phase 11 — Founder Demo, Product Excellence & AI Interview Quality
+## Current Status: Phase 12 — AI Safety, Fairness, Red-Team & AI Evaluation Quality
 
-The repository is currently at **Phase 11 (Founder Demo, Product Excellence & AI Interview Quality)**. The system features a guided **Founder Demo Mode**, synthetic demo candidate **Alex Mercer**, REST demo seeding endpoint (`POST /demo/reset`), AI Quality Test Suite (`DemoQualitySuite`), 5-minute [`DEMO_SCRIPT.md`](file:///Users/yuvraj/Desktop/projects/Ai%20Interviewer/DEMO_SCRIPT.md), and [`DEMO_CHECKLIST.md`](file:///Users/yuvraj/Desktop/projects/Ai%20Interviewer/DEMO_CHECKLIST.md).
+The repository is currently at **Phase 12 (AI Safety, Fairness, Red-Team & AI Evaluation Quality)**. The system features a centralized **SafetyPolicyEngine**, automated **RedTeamSuite** (100% attack containment), **GoldenDatasetSuite** (100% evidence traceability), **FairnessSuite** (0.00 demographic score variance), REST safety audit API (`GET /safety/audit`, `POST /safety/red-team`), and comprehensive security documentation.
 
 ---
 
-## Key Founder Demo Highlights
+## AI Safety & Security Highlights
 
-- **Resume & Job Personalization**: AI interviewer grounds questions in candidate claims (Alex Mercer, PrimeBank microservices, PostgreSQL indexing, Redis caching) without fabricating un-claimed experience.
-- **Adaptive Probe vs Scripted Bot**: AI detects candidate evidence claims, identifies evidence gaps, and selects focused follow-ups dynamically (`STRONG ANSWER` -> `DEEPER FOLLOW-UP`, `WEAK ANSWER` -> `CLARIFIES/PROBES`).
-- **Evidence Explorer Drill-Down**: Recruiter clicks evidence card -> navigates directly to exact transcript turn.
-- **AI Quality Test Suite**: `DemoQualitySuite` (`packages/interview-engine/src/demo/quality-suite.ts`) verifying personalization, repetition prevention, contradiction detection (`CONTRADICTORY`), candidate question recognition, and demographic fairness.
-- **Isolated Demo Seeding Endpoint**: `POST /demo/reset` idempotently seeds synthetic candidate Alex Mercer and Senior Backend Engineer job description.
+- **Zero Trust for LLM Outputs**: `LLM Output` -> `Structured Schema Validation` -> `Safety Policy` -> `Domain Rules` -> `Evidence Rules` -> `Persist`.
+- **Question Safety Policy**: Screens generated questions to reject protected characteristics (race, ethnicity, religion, political affiliation, sexual orientation, health, family planning) or off-topic prompts.
+- **Red-Team Attack Containment**: Automated testing of 7 attack vectors (resume injection, JD injection, candidate answer injection, system prompt extraction, role-play attack, authority attack, encoded instructions) with 100% containment.
+- **Demographic Fairness Parity**: Verified `0.00` score variance across demographic metadata (Name, University Prestige, Location) on equivalent transcript evidence.
+- **Evidence Traceability & NO EVIDENCE = NO SCORE**: 100% of evaluation scores map directly back to transcript turn IDs. Un-tested competencies receive `INSUFFICIENT_EVIDENCE`.
+
+---
+
+## Security Documentation & Reports
+
+- [`AI_THREAT_MODEL.md`](file:///Users/yuvraj/Desktop/projects/Ai%20Interviewer/AI_THREAT_MODEL.md): Comprehensive threat model covering 8 primary AI threat vectors.
+- [`FAIRNESS_POLICY.md`](file:///Users/yuvraj/Desktop/projects/Ai%20Interviewer/FAIRNESS_POLICY.md): Formal demographic fairness policy.
+- [`FAIRNESS_REPORT.md`](file:///Users/yuvraj/Desktop/projects/Ai%20Interviewer/FAIRNESS_REPORT.md): Empirical fairness test results (`0.00` score variance).
+- [`RED_TEAM_REPORT.md`](file:///Users/yuvraj/Desktop/projects/Ai%20Interviewer/RED_TEAM_REPORT.md): Red-team attack suite outcomes (100% contained).
+- [`AI_SAFETY_REPORT.md`](file:///Users/yuvraj/Desktop/projects/Ai%20Interviewer/AI_SAFETY_REPORT.md): AI safety metrics report.
+- [`AI_QUALITY_REPORT.md`](file:///Users/yuvraj/Desktop/projects/Ai%20Interviewer/AI_QUALITY_REPORT.md): Golden dataset benchmark results.
 
 ---
 
@@ -27,9 +38,9 @@ The repository is currently at **Phase 11 (Founder Demo, Product Excellence & AI
 pnpm dev
 ```
 
-### Reset Founder Demo Environment
+### Run AI Safety & Red-Team Audit
 ```bash
-curl -X POST http://localhost:3001/demo/reset
+curl -X POST http://localhost:3001/safety/red-team
 ```
 
 ### Run Linter
@@ -51,11 +62,3 @@ pnpm test
 ```bash
 pnpm build
 ```
-
----
-
-## Guided Demo Documentation
-
-- Refer to [`DEMO_SCRIPT.md`](file:///Users/yuvraj/Desktop/projects/Ai%20Interviewer/DEMO_SCRIPT.md) for the 5-minute guided founder demo script.
-- Refer to [`DEMO_CHECKLIST.md`](file:///Users/yuvraj/Desktop/projects/Ai%20Interviewer/DEMO_CHECKLIST.md) for pre-flight live demo readiness checks.
-- Refer to [`RUNBOOK.md`](file:///Users/yuvraj/Desktop/projects/Ai%20Interviewer/RUNBOOK.md) for operational deployment procedures.

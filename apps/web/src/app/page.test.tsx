@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { PROJECT_PHASE, createSessionSchema } from '@ai-interviewer/shared';
 
-describe('Web App Phase 11 Founder Demo Shell', () => {
-  it('should reference correct Phase 11 project phase', () => {
-    expect(PROJECT_PHASE).toBe('Phase 11 — Founder Demo, Product Excellence & AI Interview Quality');
+describe('Web App Phase 12 Safety & Fairness Shell', () => {
+  it('should reference correct Phase 12 project phase', () => {
+    expect(PROJECT_PHASE).toBe('Phase 12 — AI Safety, Fairness, Red-Team & AI Evaluation Quality');
   });
 
   it('should validate form schema inputs before API submission', () => {

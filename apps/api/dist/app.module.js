@@ -15,13 +15,14 @@ const realtime_service_1 = require("./interviews/realtime.service");
 const dashboard_controller_1 = require("./dashboard/dashboard.controller");
 const dashboard_service_1 = require("./dashboard/dashboard.service");
 const demo_controller_1 = require("./demo/demo.controller");
+const safety_controller_1 = require("./safety/safety.controller");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
         imports: [],
-        controllers: [health_controller_1.HealthController, interviews_controller_1.InterviewsController, dashboard_controller_1.DashboardController, demo_controller_1.DemoController],
+        controllers: [health_controller_1.HealthController, interviews_controller_1.InterviewsController, dashboard_controller_1.DashboardController, demo_controller_1.DemoController, safety_controller_1.SafetyController],
         providers: [interviews_service_1.InterviewsService, realtime_service_1.RealtimeService, dashboard_service_1.DashboardService],
     })
 ], AppModule);

@@ -38,50 +38,80 @@
 ### Phase 11 — Founder Demo, Product Excellence & AI Interview Quality
 **Status**: COMPLETED
 
+### Phase 12 — AI Safety, Fairness, Red-Team & AI Evaluation Quality
+**Status**: COMPLETED
+
 ---
 
-## Phase 11 Implementation Log
+## Phase 12 Implementation Log
 
-### Phase 11 Entry Point
+### Phase 12 Entry Point
 ```text
-Phase 10 production-ready baseline
+Phase 11 production & founder demo baseline
        ↓
-Product excellence & founder demo optimization
+AI Safety, Fairness & Quality Optimization
 ```
 
-### Founder Demo Journey Flow
+### AI Trust Flow Architecture
 ```text
-Act 1: Problem & Intelligence Preparation (Resume + JD)
-       ↓
-Act 2: Personalized Voice Greeting & Candidate Setup
-       ↓
-Act 3: Adaptive Follow-Up & Dynamic Probe (STRONG -> DEEPER Q)
-       ↓
-Act 4: Evidence Extraction & Click-to-Transcript Drill-Down
-       ↓
-Act 5: Job Requirement Coverage & Human Sign-Off (Audit log)
+              EVERYTHING EXTERNAL (Resume, JD, Candidate Audio)
+                      │
+                      ▼
+                UNTRUSTED DATA
+                      │
+                      ▼
+              ┌───────────────┐
+              │ AI MODEL      │
+              └───────┬───────┘
+                      │
+                      ▼
+             STRUCTURED OUTPUT
+                      │
+          ┌───────────┼───────────┐
+          ▼           ▼           ▼
+       Schema       Safety      Domain
+      Validation   Policy      Validation
+          │           │           │
+          └───────────┼───────────┘
+                      ▼
+               Evidence Check
+                      │
+                      ▼
+                State Machine
+                      │
+                      ▼
+                  Persist
+                      │
+                      ▼
+                Human Review
 ```
 
-### Key Demonstrations & Capabilities
-1. **Resume/JD Personalization**: AI interviewer grounds questions in candidate claims (Alex Mercer, PrimeBank microservices, PostgreSQL indexing, Redis caching) without fabricating un-claimed experience.
-2. **Adaptive Probe vs Scripted Bot**: AI detects candidate evidence claims, identifies evidence gaps, and selects focused follow-ups dynamically.
-3. **AI Quality Test Suite**: `DemoQualitySuite` (`packages/interview-engine/src/demo/quality-suite.ts`) verifying personalization, repetition prevention, contradiction detection (`CONTRADICTORY`), candidate questions, and demographic fairness.
-4. **Isolated Demo Seeding Endpoint**: `POST /demo/reset` idempotently seeds synthetic candidate Alex Mercer and Senior Backend Engineer job description.
-5. **Guided Founder Demo Script & Checklist**: `DEMO_SCRIPT.md` (5-minute guided script) and `DEMO_CHECKLIST.md` (pre-flight checklist).
+### Key Safety & Quality Subsystems
+1. **SafetyPolicyEngine**: Centralized policy engine enforcing question safety, evidence turn verification, score boundary validation (1–5), and untrusted input sanitization.
+2. **RedTeamSuite**: Automated attack dataset executing 7 attack vectors (resume injection, JD injection, candidate answer injection, system prompt extraction, role-play attack, authority attack, encoded instructions) with 100% containment.
+3. **GoldenDatasetSuite**: Synthetic benchmark cases verifying 100% evidence traceability and 0% unsupported claims.
+4. **FairnessSuite**: Demographic fairness suite verifying 0.00 score variance across demographic metadata variations.
+5. **REST Audit Endpoints**: `GET /safety/audit` and `POST /safety/red-team`.
+6. **Documentation & Security Reports**: `AI_THREAT_MODEL.md`, `FAIRNESS_POLICY.md`, `FAIRNESS_REPORT.md`, `RED_TEAM_REPORT.md`, `AI_SAFETY_REPORT.md`, and `AI_QUALITY_REPORT.md`.
 
-### Files Added/Modified in Phase 11
+### Files Added/Modified in Phase 12
 - `packages/shared/src/index.ts`
 - `packages/shared/src/index.test.ts`
-- `packages/interview-engine/src/demo/quality-suite.ts`
-- `packages/interview-engine/src/demo/quality.test.ts`
+- `packages/interview-engine/src/safety/safety-policy.ts`
+- `packages/interview-engine/src/safety/red-team.ts`
+- `packages/interview-engine/src/safety/golden-dataset.ts`
+- `packages/interview-engine/src/safety/fairness.ts`
+- `packages/interview-engine/src/safety/safety.test.ts`
 - `packages/interview-engine/src/index.ts`
-- `apps/api/src/demo/demo.controller.ts`
-- `apps/api/src/demo/demo.controller.spec.ts`
+- `apps/api/src/safety/safety.controller.ts`
+- `apps/api/src/safety/safety.controller.spec.ts`
 - `apps/api/src/app.module.ts`
-- `apps/web/src/app/recruiter/page.tsx`
-- `apps/web/src/app/page.test.tsx`
-- `DEMO_SCRIPT.md`
-- `DEMO_CHECKLIST.md`
+- `AI_THREAT_MODEL.md`
+- `FAIRNESS_POLICY.md`
+- `FAIRNESS_REPORT.md`
+- `RED_TEAM_REPORT.md`
+- `AI_SAFETY_REPORT.md`
+- `AI_QUALITY_REPORT.md`
 - `flow.md`
 - `context.md`
 - `README.md`
@@ -89,5 +119,5 @@ Act 5: Job Requirement Coverage & Human Sign-Off (Audit log)
 ### Verification Summary
 - `pnpm lint`: PASS
 - `pnpm typecheck`: PASS
-- `pnpm test`: PASS
+- `pnpm test`: PASS (72/72 tests passed)
 - `pnpm build`: PASS

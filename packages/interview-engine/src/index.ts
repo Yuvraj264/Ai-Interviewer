@@ -17,6 +17,10 @@ export * from './evaluation/evaluator';
 export * from './evaluation/human-review';
 export * from './analytics/analytics-service';
 export * from './demo/quality-suite';
+export * from './safety/safety-policy';
+export * from './safety/red-team';
+export * from './safety/golden-dataset';
+export * from './safety/fairness';
 
 export interface InterviewInteractionProvider {
   start(): Promise<void>;

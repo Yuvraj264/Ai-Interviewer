@@ -473,6 +473,43 @@ export interface DemoResetResponse {
   timestamp: string;
 }
 
+// Phase 12 AI Safety, Fairness & Red-Team Types
+export type SafetyViolationType =
+  | 'PROTECTED_CHARACTERISTIC'
+  | 'OFF_TOPIC'
+  | 'PROMPT_INJECTION'
+  | 'HALLUCINATED_CLAIM'
+  | 'SCORE_OUT_OF_BOUNDS'
+  | 'INVALID_EVIDENCE_REFERENCE'
+  | 'UNSAFE_PROMPT_EXTRACTION';
+
+export type RedTeamAttackType =
+  | 'RESUME_INJECTION'
+  | 'JD_INJECTION'
+  | 'CANDIDATE_ANSWER_INJECTION'
+  | 'SYSTEM_PROMPT_EXTRACTION'
+  | 'ROLE_PLAY_ATTACK'
+  | 'AUTHORITY_ATTACK'
+  | 'ENCODED_INSTRUCTION';
+
+export interface SafetyAuditReport {
+  timestamp: string;
+  questionSafetyPercentage: number;
+  evidenceTraceabilityPercentage: number;
+  unsupportedClaimRatePercentage: number;
+  promptInjectionResistancePercentage: number;
+  demographicScoreVariance: number;
+  status: 'SAFE' | 'NEEDS_ATTENTION' | 'CRITICAL_RISK';
+}
+
+export interface RedTeamTestResult {
+  attackType: RedTeamAttackType;
+  promptPayload: string;
+  contained: boolean;
+  mitigationUsed: string;
+  timestamp: string;
+}
+
 export interface TranscriptItem {
   id: string;
   speaker: 'ai' | 'candidate';
@@ -505,4 +542,4 @@ export interface ApiResponse<T = unknown> {
   timestamp: string;
 }
 
-export const PROJECT_PHASE = 'Phase 11 — Founder Demo, Product Excellence & AI Interview Quality' as const;
+export const PROJECT_PHASE = 'Phase 12 — AI Safety, Fairness, Red-Team & AI Evaluation Quality' as const;

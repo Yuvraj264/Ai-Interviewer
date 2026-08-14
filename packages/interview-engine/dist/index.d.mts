@@ -1,4 +1,4 @@
-import { EngineQuestion, InterviewType, InterviewConfig, InterviewEngineState, InterviewStage, AnswerAnalysis, QualityCategory, AdaptiveDecision, AdaptiveDecisionRecord, CandidateProfile, JobProfile, CandidateJobProfile, InterviewTarget, EvaluationDimension, TranscriptItem, InterviewEvaluation, HumanReviewOverride, HumanReview, InterviewSession, DashboardOverviewMetrics, AnalyticsData, RequirementCoverageStatus } from '@ai-interviewer/shared';
+import { EngineQuestion, InterviewType, InterviewConfig, InterviewEngineState, InterviewStage, AnswerAnalysis, QualityCategory, AdaptiveDecision, AdaptiveDecisionRecord, CandidateProfile, JobProfile, CandidateJobProfile, InterviewTarget, EvaluationDimension, TranscriptItem, InterviewEvaluation, HumanReviewOverride, HumanReview, InterviewSession, DashboardOverviewMetrics, AnalyticsData, RequirementCoverageStatus, SafetyViolationType, EvaluationEvidence, RedTeamTestResult, RedTeamAttackType } from '@ai-interviewer/shared';
 
 interface InterviewerPromptContext {
     candidateName?: string;
@@ -213,6 +213,62 @@ declare class DemoQualitySuite {
     verifyDemographicFairness(evalCandidateA: InterviewEvaluation, evalCandidateB: InterviewEvaluation): QualityValidationResult;
 }
 
+interface QuestionValidationResult {
+    safe: boolean;
+    violationType?: SafetyViolationType;
+    reason?: string;
+}
+interface EvidenceValidationResult {
+    valid: boolean;
+    violationType?: SafetyViolationType;
+    reason?: string;
+}
+interface EvaluationValidationResult {
+    valid: boolean;
+    violationType?: SafetyViolationType;
+    reason?: string;
+}
+declare class SafetyPolicyEngine {
+    private static readonly PROTECTED_TERMS;
+    private static readonly INJECTION_PAYLOADS;
+    validateQuestion(questionText: string): QuestionValidationResult;
+    validateEvidence(evidence: EvaluationEvidence, transcript: TranscriptItem[]): EvidenceValidationResult;
+    validateEvaluation(evaluation: InterviewEvaluation): EvaluationValidationResult;
+    sanitizeUntrustedInput(text: string): string;
+}
+
+interface RedTeamTestCase {
+    attackType: RedTeamAttackType;
+    promptPayload: string;
+}
+declare class RedTeamSuite {
+    private policyEngine;
+    private static readonly ATTACK_TEST_CASES;
+    constructor();
+    runRedTeamSuite(): RedTeamTestResult[];
+}
+
+interface GoldenCaseResult {
+    caseId: string;
+    name: string;
+    evidenceTraceabilityPercentage: number;
+    unsupportedClaimRatePercentage: number;
+    passed: boolean;
+}
+declare class GoldenDatasetSuite {
+    runGoldenDataset(): GoldenCaseResult[];
+}
+
+interface DemographicFairnessResult {
+    dimensionCount: number;
+    scoreVariance: number;
+    passed: boolean;
+    reason: string;
+}
+declare class FairnessSuite {
+    evaluateDemographicParity(evalCandidateA: InterviewEvaluation, evalCandidateB: InterviewEvaluation): DemographicFairnessResult;
+}
+
 interface InterviewInteractionProvider {
     start(): Promise<void>;
     submitCandidateResponse(response: string): Promise<void>;
@@ -253,4 +309,4 @@ declare class MockInterviewer implements InterviewInteractionProvider {
     private notifyState;
 }
 
-export { ADAPTIVE_DECISION_VERSION, ANSWER_ANALYSIS_VERSION, AdaptiveDecisionMaker, type AdaptiveEngineResult, AdaptiveQuestionSelector, AdaptiveQuestioningEngine, AnalyticsService, type AnalyzerOptions, AnswerAnalyzer, BACKEND_ENGINEER_RUBRIC_V1, type BoundedInterviewContext, CandidateJobMatcher, DEFAULT_TECHNICAL_RUBRIC_V1, DemoQualitySuite, DeterministicFallbackHandler, EVALUATION_ENGINE_VERSION, EVALUATION_PROMPT_VERSION, type EvaluationInput, EvaluationRubric, EvidenceEvaluator, type FallbackReason, HumanReviewService, InterviewAlreadyCompletedError, InterviewContextBuilder, InterviewEngine, type InterviewInteractionProvider, type InterviewerPromptContext, InvalidTransitionError, JD_PARSER_VERSION, JobDescriptionParser, MockInterviewer, type MockInterviewerState, QUESTION_BANK, type QualityValidationResult, QuestionBudgetExceededError, type QuestionSelectorOptions, RESUME_PARSER_VERSION, ResumeParser, type RubricDefinition, SessionNotFoundError, SkillNormalizer, buildInterviewerInstructions, getQuestionsForType };
+export { ADAPTIVE_DECISION_VERSION, ANSWER_ANALYSIS_VERSION, AdaptiveDecisionMaker, type AdaptiveEngineResult, AdaptiveQuestionSelector, AdaptiveQuestioningEngine, AnalyticsService, type AnalyzerOptions, AnswerAnalyzer, BACKEND_ENGINEER_RUBRIC_V1, type BoundedInterviewContext, CandidateJobMatcher, DEFAULT_TECHNICAL_RUBRIC_V1, DemoQualitySuite, type DemographicFairnessResult, DeterministicFallbackHandler, EVALUATION_ENGINE_VERSION, EVALUATION_PROMPT_VERSION, type EvaluationInput, EvaluationRubric, type EvaluationValidationResult, EvidenceEvaluator, type EvidenceValidationResult, FairnessSuite, type FallbackReason, type GoldenCaseResult, GoldenDatasetSuite, HumanReviewService, InterviewAlreadyCompletedError, InterviewContextBuilder, InterviewEngine, type InterviewInteractionProvider, type InterviewerPromptContext, InvalidTransitionError, JD_PARSER_VERSION, JobDescriptionParser, MockInterviewer, type MockInterviewerState, QUESTION_BANK, type QualityValidationResult, QuestionBudgetExceededError, type QuestionSelectorOptions, type QuestionValidationResult, RESUME_PARSER_VERSION, RedTeamSuite, type RedTeamTestCase, ResumeParser, type RubricDefinition, SafetyPolicyEngine, SessionNotFoundError, SkillNormalizer, buildInterviewerInstructions, getQuestionsForType };

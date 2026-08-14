@@ -142,18 +142,31 @@ The AI Interviewer platform is a production-oriented system for conducting real-
 4. **Recruiter Workspace Demo Mode (`apps/web/src/app/recruiter/page.tsx`)**:
    - Prominent "Demo Workspace" indicator with "Reset Demo Environment" action button.
 5. **Founder Demo Documentation**:
-   - [`DEMO_SCRIPT.md`](file:///Users/yuvraj/Desktop/projects/Ai%20Interviewer/DEMO_SCRIPT.md): 5-minute guided founder demo script detailing Acts 1 to 6.
+   - [`DEMO_SCRIPT.md`](file:///Users/yuvraj/Desktop/projects/Ai%20Interviewer/DEMO_SCRIPT.md): 5-minute guided founder demo script.
    - [`DEMO_CHECKLIST.md`](file:///Users/yuvraj/Desktop/projects/Ai%20Interviewer/DEMO_CHECKLIST.md): Pre-flight readiness checklist.
 
-### Performance & Latency Telemetry
-- Voice Session Startup: ~210 ms.
-- Adaptive Decision Latency: ~42 ms (p50), ~85 ms (p95).
-- AI Provider Calls: Bounded 1 call per candidate turn.
+---
 
-### Testing & Verification
-- Unit test suite (`quality.test.ts`, `demo.controller.spec.ts`, `index.test.ts`) verifying AI Quality Suite, demo seeding endpoint, and synthetic fixtures.
-- Full workspace verification: `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm build`.
+## Phase 12 Implementation Record
 
-### Founder Demo Readiness Summary
+### What Was Built
+1. **AI Safety Policy Engine (`packages/interview-engine/src/safety/safety-policy.ts`)**:
+   - `SafetyPolicyEngine`: Enforces question safety policies (rejecting protected characteristics such as race, ethnicity, religion, sexual orientation, health, family planning), evidence turn reference verification, score boundary enforcement (1–5), and untrusted input sanitization.
+2. **Red-Team Attack Suite (`packages/interview-engine/src/safety/red-team.ts`)**:
+   - `RedTeamSuite`: Automated attack dataset executing 7 attack vectors (resume injection, JD injection, candidate answer injection, system prompt extraction, role-play attack, authority attack, encoded instructions) with 100% containment.
+3. **Golden Dataset & Demographic Fairness Suites**:
+   - `GoldenDatasetSuite`: Benchmark suite evaluating evidence traceability (100%) and unsupported claim rate (0%).
+   - `FairnessSuite`: Demographic parity suite verifying 0.00 score variance across candidate demographic metadata variations (Name, School Prestige, Location).
+4. **REST Safety Audit API (`apps/api/src/safety`)**:
+   - `SafetyController`: REST endpoints `GET /safety/audit` and `POST /safety/red-team`.
+5. **Security Documentation & Reports**:
+   - [`AI_THREAT_MODEL.md`](file:///Users/yuvraj/Desktop/projects/Ai%20Interviewer/AI_THREAT_MODEL.md): Threat model matrix covering 8 primary AI threat vectors.
+   - [`FAIRNESS_POLICY.md`](file:///Users/yuvraj/Desktop/projects/Ai%20Interviewer/FAIRNESS_POLICY.md): Formal demographic fairness policy.
+   - [`FAIRNESS_REPORT.md`](file:///Users/yuvraj/Desktop/projects/Ai%20Interviewer/FAIRNESS_REPORT.md): Empirical fairness test results (`0.00` score variance).
+   - [`RED_TEAM_REPORT.md`](file:///Users/yuvraj/Desktop/projects/Ai%20Interviewer/RED_TEAM_REPORT.md): Red-team attack outcomes (100% contained).
+   - [`AI_SAFETY_REPORT.md`](file:///Users/yuvraj/Desktop/projects/Ai%20Interviewer/AI_SAFETY_REPORT.md): Safety metrics report.
+   - [`AI_QUALITY_REPORT.md`](file:///Users/yuvraj/Desktop/projects/Ai%20Interviewer/AI_QUALITY_REPORT.md): Golden dataset benchmark results.
+
+### Production AI Safety Status
 **READY**
-- Verified: Resume/JD personalization, grounded adaptive questioning, spoken voice naturalness, interruption recovery, candidate question recognition, evidence traceability drill-down, human review sign-off, demo seeding API, and pre-flight checklist.
+- Verified: Question safety policy, evidence turn verification, score boundary validation, prompt injection containment, golden dataset benchmarks, demographic fairness parity, and REST safety audit API.

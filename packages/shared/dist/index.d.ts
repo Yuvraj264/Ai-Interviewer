@@ -330,6 +330,24 @@ interface DemoResetResponse {
     message: string;
     timestamp: string;
 }
+type SafetyViolationType = 'PROTECTED_CHARACTERISTIC' | 'OFF_TOPIC' | 'PROMPT_INJECTION' | 'HALLUCINATED_CLAIM' | 'SCORE_OUT_OF_BOUNDS' | 'INVALID_EVIDENCE_REFERENCE' | 'UNSAFE_PROMPT_EXTRACTION';
+type RedTeamAttackType = 'RESUME_INJECTION' | 'JD_INJECTION' | 'CANDIDATE_ANSWER_INJECTION' | 'SYSTEM_PROMPT_EXTRACTION' | 'ROLE_PLAY_ATTACK' | 'AUTHORITY_ATTACK' | 'ENCODED_INSTRUCTION';
+interface SafetyAuditReport {
+    timestamp: string;
+    questionSafetyPercentage: number;
+    evidenceTraceabilityPercentage: number;
+    unsupportedClaimRatePercentage: number;
+    promptInjectionResistancePercentage: number;
+    demographicScoreVariance: number;
+    status: 'SAFE' | 'NEEDS_ATTENTION' | 'CRITICAL_RISK';
+}
+interface RedTeamTestResult {
+    attackType: RedTeamAttackType;
+    promptPayload: string;
+    contained: boolean;
+    mitigationUsed: string;
+    timestamp: string;
+}
 interface TranscriptItem {
     id: string;
     speaker: 'ai' | 'candidate';
@@ -358,6 +376,6 @@ interface ApiResponse<T = unknown> {
     };
     timestamp: string;
 }
-declare const PROJECT_PHASE: "Phase 11 \u2014 Founder Demo, Product Excellence & AI Interview Quality";
+declare const PROJECT_PHASE: "Phase 12 \u2014 AI Safety, Fairness, Red-Team & AI Evaluation Quality";
 
-export { type AdaptiveAction, type AdaptiveDecision, type AdaptiveDecisionRecord, type AiConversationState, type AnalyticsData, type AnswerAnalysis, type ApiResponse, type CandidateExperience, type CandidateJobProfile, type CandidateProfile, type CandidateProject, type CandidateSkill, type CreateSessionDto, DEMO_SYNTHETIC_CANDIDATE, DEMO_SYNTHETIC_JOB, type DashboardOverviewMetrics, type DeepHealthStatus, type DemoResetResponse, type DocumentProcessingStatus, type EngineEventType, type EngineQuestion, type EngineQuestionState, type EvaluationDimension, type EvaluationEvidence, type EvaluationStatus, type EvidenceItem, type EvidenceType, type HumanReview, type HumanReviewOverride, type InterviewConfig, type InterviewEngineState, type InterviewEvaluation, type InterviewSession, type InterviewStage, type InterviewTarget, type InterviewType, type JobProfile, type LoadTestResult, type MicrophoneState, PROJECT_PHASE, type PaginatedResponse, type QualityCategory, type RealtimeConnectionState, type RealtimeTokenResponse, type RecruiterTenantContext, type RequirementCoverageStatus, type RequirementEvaluation, type SessionStatus, type SkillRequirement, type SystemHealth, type TargetStatus, type TargetType, type TranscriptItem, type VerificationStatus, createSessionSchema };
+export { type AdaptiveAction, type AdaptiveDecision, type AdaptiveDecisionRecord, type AiConversationState, type AnalyticsData, type AnswerAnalysis, type ApiResponse, type CandidateExperience, type CandidateJobProfile, type CandidateProfile, type CandidateProject, type CandidateSkill, type CreateSessionDto, DEMO_SYNTHETIC_CANDIDATE, DEMO_SYNTHETIC_JOB, type DashboardOverviewMetrics, type DeepHealthStatus, type DemoResetResponse, type DocumentProcessingStatus, type EngineEventType, type EngineQuestion, type EngineQuestionState, type EvaluationDimension, type EvaluationEvidence, type EvaluationStatus, type EvidenceItem, type EvidenceType, type HumanReview, type HumanReviewOverride, type InterviewConfig, type InterviewEngineState, type InterviewEvaluation, type InterviewSession, type InterviewStage, type InterviewTarget, type InterviewType, type JobProfile, type LoadTestResult, type MicrophoneState, PROJECT_PHASE, type PaginatedResponse, type QualityCategory, type RealtimeConnectionState, type RealtimeTokenResponse, type RecruiterTenantContext, type RedTeamAttackType, type RedTeamTestResult, type RequirementCoverageStatus, type RequirementEvaluation, type SafetyAuditReport, type SafetyViolationType, type SessionStatus, type SkillRequirement, type SystemHealth, type TargetStatus, type TargetType, type TranscriptItem, type VerificationStatus, createSessionSchema };

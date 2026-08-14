@@ -4111,7 +4111,7 @@ var DEMO_SYNTHETIC_JOB = {
   domains: ["FinTech", "Distributed Systems"],
   organizationId: "org_scaler_demo"
 };
-var PROJECT_PHASE = "Phase 11 \u2014 Founder Demo, Product Excellence & AI Interview Quality";
+var PROJECT_PHASE = "Phase 12 \u2014 AI Safety, Fairness, Red-Team & AI Evaluation Quality";
 export {
   DEMO_SYNTHETIC_CANDIDATE,
   DEMO_SYNTHETIC_JOB,
