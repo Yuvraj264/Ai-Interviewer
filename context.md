@@ -15,7 +15,7 @@ The AI Interviewer platform is a production-oriented system for conducting real-
 5. **`packages/shared`**: Centralized TypeScript types.
 6. **`packages/interview-engine`**: Engine module placeholder.
 7. **`packages/config`**: Centralized environment variable validation using `zod`.
-8. **`infra/`**: Local development infrastructure via Docker Compose (PostgreSQL 16 and Valkey).
+8. **`infra/`**: Local development infrastructure via Docker Compose (PostgreSQL 16, Valkey, and LiveKit WebRTC Server).
 
 ---
 
@@ -58,92 +58,41 @@ The AI Interviewer platform is a production-oriented system for conducting real-
 
 ---
 
-## Phase 6 Implementation Record
+## Realtime Voice Infrastructure & LiveKit Hotfix Record
 
-### What Was Built
-1. **Adaptive Questioning Engine (`packages/interview-engine/src/adaptive`)**: Introduced an evidence-grounded adaptive questioning engine (`AnswerAnalyzer`, `AdaptiveDecisionMaker`, `AdaptiveQuestionSelector`, `DeterministicFallbackHandler`, `AdaptiveQuestioningEngine`).
-2. **Prompt Injection Defense & Hallucination Control**: `ANSWER_ANALYSIS_V1` treats transcript as untrusted data. Grounded concept check ensures evidence claims only reference concepts explicitly present in candidate transcript.
+### 1. Root Cause Analysis
+- **Error**: `net::ERR_CONNECTION_REFUSED` on `ws://localhost:7880/rtc/v1`.
+- **Cause**: No LiveKit WebRTC server process was listening on TCP port 7880 on the host machine.
+- **Verification**: `lsof -nP -iTCP:7880 -sTCP:LISTEN` confirmed port 7880 was not listening.
 
----
+### 2. Local Infrastructure Resolution Strategy
+- **Containerized LiveKit Server**: Added `livekit/livekit-server:v1.8.0` service to `infra/docker-compose.yml` with flags `--dev --keys "devkey: secret"`.
+- **Published Host Ports**: Exposed `7880:7880`, `7881:7881`, `7882:7882/udp` for host browser access.
+- **Reproducible Startup Command**:
+  ```bash
+  docker compose -f infra/docker-compose.yml up -d
+  ```
 
-## Phase 7 Implementation Record
+### 3. URL & Networking Mapping
+- **Local LiveKit URL**: `ws://localhost:7880`
+- **Browser LiveKit URL**: `ws://localhost:7880`
+- **API LiveKit URL**: `ws://localhost:7880`
+- **Agent LiveKit URL**: `ws://localhost:7880`
+- **Container Networking**: Host port binding (`7880:7880`) allows host browser and local services to connect to `ws://localhost:7880` cleanly.
 
-### What Was Built
-1. **Resume & Job Description Intelligence (`packages/interview-engine/src/intelligence`)**:
-   - `SkillNormalizer`: Deterministic skill taxonomy & alias mapping (`Node JS` -> `Node.js`, `Postgres` -> `PostgreSQL`).
-   - `ResumeParser` (`RESUME_PARSER_V1`): Parses candidate experience, projects, education, and normalized skills with `verificationStatus: 'UNVERIFIED'`.
-   - `JobDescriptionParser` (`JD_PARSER_V1`): Parses job descriptions, separating Required vs Preferred skills, responsibilities, qualifications, and domains.
-   - `CandidateJobMatcher`: Maps Candidate Profile to Job Profile to generate prioritized `InterviewTarget` lists (`VERIFY_RESUME_CLAIM`, `TEST_REQUIRED_SKILL`, `DEEP_DIVE_PROJECT`, `EXPLORE_GAP`).
-   - `InterviewContextBuilder`: Precomputes bounded context slices per turn based on active target and candidate evidence without overflowing LLM context budget.
-2. **REST API Service Integration (`apps/api`)**:
-   - Exposed `POST /interviews/:id/resume`, `POST /interviews/:id/jd`, `GET /interviews/:id/profile`, and `POST /interviews/:id/prepare`.
+### 4. Security & Token Architecture
+- **Server-Side Token Generation**: `InterviewsController` (`POST /interviews/:id/realtime/token`) delegates to `RealtimeService.generateCandidateToken(sessionId)`.
+- **JWT Grants**: `iss: devkey`, `ttl: 30m`, `roomJoin: true`, `room: interview:{sessionId}`, `identity: candidate-{sessionId}`, `canPublish: true`, `canSubscribe: true`.
+- **Zero Credential Exposure**: `LIVEKIT_API_SECRET` and `OPENAI_API_KEY` remain server-side only. Browser receives short-lived token and public WebSocket URL (`ws://localhost:7880`).
+- **Error Log Sanitization**: `useRealtimeAudio.ts` sanitizes all query parameters (`?access_token=REDACTED`), preventing JWT token leaks in console logs or error reports.
 
----
+### 5. Participant Identity & Room Naming
+- **Room Identifier**: `interview:{sessionId}`
+- **Candidate Participant**: `candidate-{sessionId}`
+- **Agent Participant**: `agent-{sessionId}`
 
-## Phase 8 Implementation Record
-
-### What Was Built
-1. **Evidence-Based Interview Evaluation Subsystem (`packages/interview-engine/src/evaluation`)**:
-   - `EvaluationRubric`: Configurable evaluation rubrics per engineering role (`BACKEND_ENGINEER_RUBRIC_V1`).
-   - `EvidenceEvaluator`: Versioned evaluation engine (`EVALUATION_ENGINE_V1` & `EVALUATION_PROMPT_VERSION`) scoring observable transcript evidence against rubric dimensions.
-   - **NO EVIDENCE = NO SCORE**: Un-tested competencies receive `score: undefined` and `status: 'INSUFFICIENT_EVIDENCE'`.
-   - **Evidence Traceability**: Every non-null 1–5 score maps directly back to transcript question/answer IDs.
-   - **Requirement Coverage Mapping**: Maps job requirements to `SUPPORTED`, `STRONGLY_SUPPORTED`, `PARTIALLY_TESTED`, `NOT_TESTED`, or `CONTRADICTORY`.
-   - `HumanReviewService`: Supports human reviewer overrides and notes without mutating historical AI evidence. Preserves audit trail (`reviewerId`, `timestamp`, `previousValue`, `newValue`, `note`).
-
----
-
-## Phase 9 Implementation Record
-
-### What Was Built
-1. **Recruiter Intelligence Workspace (`apps/web/src/app/recruiter/page.tsx`)**:
-   - **DashboardOverview**: High-value metrics cards (Total Interviews, Active, Completed, Pending Evals, Completion Rate %, Avg Duration, Requirement Coverage %).
-   - **CandidateListView**: Candidate directory with search, filter, pagination, and Claim Verification UI (`SUPPORTED`, `PARTIALLY VERIFIED`, `UNVERIFIED`).
-   - **InterviewDetailWorkspace**: Tabbed workspace (Overview, Transcript with search, Questions & Adaptive Flow visualizer, Evidence Explorer with click-to-transcript drill-down, Phase 8 Evaluation report, Human Review sign-off).
-   - **AnalyticsView**: Server-side operational, AI behavior, evaluation, and requirement coverage analytics.
-2. **Backend Dashboard Subsystem (`apps/api/src/dashboard`)**:
-   - `AnalyticsService` (`packages/interview-engine/src/analytics/analytics-service.ts`): Server-side metric calculation with zero-denominator safety (`NaN%`/`Infinity%` handling).
-   - `DashboardService` & `DashboardController`: REST endpoints (`GET /dashboard/overview`, `GET /dashboard/candidates`, `GET /dashboard/interviews`, `GET /dashboard/jobs`, `GET /dashboard/analytics`) enforcing multi-tenant isolation (`organizationId`).
-
----
-
-## Phase 10 Implementation Record
-
-### What Was Built
-1. **Environment Configuration & Fail-Fast Startup Validation**:
-   - Extended `packages/config` with production fail-fast check. Missing credentials halt boot in production mode.
-2. **Production Observability & Security Hardening (`apps/api`)**:
-   - `StructuredLoggerService`: Emits JSON logs with `X-Correlation-ID` while redacting candidate PII, transcripts, tokens, and API keys.
-   - `RateLimiterGuard`: Enforces 120 req/min quota per client IP.
-   - `HealthController`: Exposes `GET /health` (liveness) and `GET /health/readiness` (deep readiness probe).
-3. **Realtime WebRTC Resilience (`apps/agent`)**:
-   - Added `handleReconnection()` to `RealtimeVoiceSession` for auto-reconnection and session state recovery.
-4. **Load Testing & Benchmarking Suite (`infra/load-tests`)**:
-   - `LoadTester`: Benchmark tool measuring RPS, `p50Ms`, `p95Ms`, `p99Ms` latencies, and error rates.
-5. **Containerization & Operational Runbook**:
-   - Production multi-stage `Dockerfile`, `.dockerignore`, and `RUNBOOK.md`.
-
----
-
-## Phase 11 Implementation Record
-
-### What Was Built
-1. **Founder Demo Strategy & Product Excellence**:
-   - Elevated product experience to clearly demonstrate the difference between a static voice bot and an adaptive AI Interviewer.
-   - Created synthetic candidate **Alex Mercer** (Senior Backend Engineer) and **Senior Backend Engineer** job profile.
-2. **AI Quality Test Suite (`packages/interview-engine/src/demo/quality-suite.ts`)**:
-   - `verifyPersonalization()`: Verifies question personalization uses claimed resume context without hallucinating un-claimed skills.
-   - `verifyRepetitionPrevention()`: Prevents topic repetition across 10+ turns.
-   - `verifyContradictionDetection()`: Detects conflicting candidate statements (`CONTRADICTORY`).
-   - `verifyCandidateQuestionHandling()`: Classifies candidate questions (`"What architecture do you use?"`) and rephrasing requests (`"Could you repeat the question?"`).
-   - `verifyDemographicFairness()`: Ensures 100% score identity across candidate demographic metadata.
-3. **Demo Environment & Seeding Endpoint (`apps/api/src/demo`)**:
-   - `DemoController`: `POST /demo/reset` idempotently seeds synthetic candidate Alex Mercer and Senior Backend Engineer job description. `GET /demo/status` returns demo readiness.
-4. **Recruiter Workspace Demo Mode (`apps/web/src/app/recruiter/page.tsx`)**:
-   - Prominent "Demo Workspace" indicator with "Reset Demo Environment" action button.
-5. **Founder Demo Documentation**:
-   - [`DEMO_SCRIPT.md`](file:///Users/yuvraj/Desktop/projects/Ai%20Interviewer/DEMO_SCRIPT.md): 5-minute guided founder demo script.
-   - [`DEMO_CHECKLIST.md`](file:///Users/yuvraj/Desktop/projects/Ai%20Interviewer/DEMO_CHECKLIST.md): Pre-flight readiness checklist.
+### 6. Health & Observability
+- Added `GET /health/readiness` deep service probe and `GET /health/realtime` endpoint in `HealthController` returning `{ status: 'LIVEKIT_REACHABLE', url: 'ws://localhost:7880' }`.
 
 ---
 

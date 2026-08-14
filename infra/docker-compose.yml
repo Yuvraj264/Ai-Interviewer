@@ -31,6 +31,24 @@ services:
       timeout: 5s
       retries: 5
 
+  livekit:
+    image: livekit/livekit-server:v1.8.0
+    container_name: ai_interviewer_livekit
+    restart: unless-stopped
+    command:
+      - "--dev"
+      - "--keys"
+      - "devkey: secret"
+    ports:
+      - '7880:7880'
+      - '7881:7881'
+      - '7882:7882/udp'
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:7880/ || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
 volumes:
   postgres_data:
   valkey_data:

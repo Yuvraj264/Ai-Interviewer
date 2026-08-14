@@ -15,12 +15,18 @@ const shared_1 = require("@ai-interviewer/shared");
         (0, vitest_1.expect)(response.data?.service).toBe(shared_1.PROJECT_PHASE);
         (0, vitest_1.expect)(typeof response.data?.uptime).toBe('number');
     });
-    (0, vitest_1.it)('should return deep readiness status with database, redis, and livekit health metrics', () => {
-        const response = healthController.getReadiness();
+    (0, vitest_1.it)('should return deep readiness status with database, redis, and livekit health metrics', async () => {
+        const response = await healthController.getReadiness();
         (0, vitest_1.expect)(response.success).toBe(true);
         (0, vitest_1.expect)(response.data?.status).toBeDefined();
         (0, vitest_1.expect)(response.data?.services.database).toBe(true);
         (0, vitest_1.expect)(response.data?.services.redis).toBe(true);
+    });
+    (0, vitest_1.it)('should return realtime LiveKit status check', async () => {
+        const response = await healthController.getRealtimeHealth();
+        (0, vitest_1.expect)(response.success).toBe(true);
+        (0, vitest_1.expect)(response.data?.status).toBeDefined();
+        (0, vitest_1.expect)(response.data?.url).toBeDefined();
     });
 });
 //# sourceMappingURL=health.controller.spec.js.map

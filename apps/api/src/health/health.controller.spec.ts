@@ -18,12 +18,20 @@ describe('HealthController Phase 10 Production Health & Readiness', () => {
     expect(typeof response.data?.uptime).toBe('number');
   });
 
-  it('should return deep readiness status with database, redis, and livekit health metrics', () => {
-    const response = healthController.getReadiness();
+  it('should return deep readiness status with database, redis, and livekit health metrics', async () => {
+    const response = await healthController.getReadiness();
 
     expect(response.success).toBe(true);
     expect(response.data?.status).toBeDefined();
     expect(response.data?.services.database).toBe(true);
     expect(response.data?.services.redis).toBe(true);
+  });
+
+  it('should return realtime LiveKit status check', async () => {
+    const response = await healthController.getRealtimeHealth();
+
+    expect(response.success).toBe(true);
+    expect(response.data?.status).toBeDefined();
+    expect(response.data?.url).toBeDefined();
   });
 });

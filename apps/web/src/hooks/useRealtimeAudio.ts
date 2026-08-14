@@ -156,10 +156,11 @@ export function useRealtimeAudio(sessionId: string): UseRealtimeAudioResult {
       console.log('[Realtime Voice Transport] [realtime.microphone.enabled]');
     } catch (err: unknown) {
       const rawMsg = err instanceof Error ? err.message : 'Failed to establish realtime connection.';
-      const isConnectionRefused = rawMsg.includes('Failed to fetch') || rawMsg.includes('could not establish signal') || rawMsg.includes('ERR_CONNECTION');
+      const sanitized = rawMsg.replace(/\?access_token=[^&\s]+/g, '?access_token=REDACTED');
+      const isConnectionRefused = sanitized.includes('Failed to fetch') || sanitized.includes('could not establish signal') || sanitized.includes('ERR_CONNECTION');
       const msg = isConnectionRefused
-        ? 'LiveKit WebRTC server is offline (ws://localhost:7880). The interview will continue seamlessly in Simulated Interactive Mode via the UI controls.'
-        : rawMsg;
+        ? 'LiveKit WebRTC server is offline (ws://localhost:7880). Please ensure docker compose up -d is running.'
+        : sanitized;
       setErrorMessage(msg);
       setConnectionState('FAILED');
       setAiConversationState('ERROR');

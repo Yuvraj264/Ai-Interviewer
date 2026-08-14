@@ -2,6 +2,11 @@ import { ApiResponse, SystemHealth, DeepHealthStatus } from '@ai-interviewer/sha
 export declare class HealthController {
     private readonly startTime;
     getHealth(): ApiResponse<SystemHealth>;
-    getReadiness(): ApiResponse<DeepHealthStatus>;
+    getReadiness(): Promise<ApiResponse<DeepHealthStatus>>;
+    getRealtimeHealth(): Promise<ApiResponse<{
+        status: 'LIVEKIT_REACHABLE' | 'LIVEKIT_UNAVAILABLE';
+        url: string;
+    }>>;
+    private checkLivekitReachable;
 }
 //# sourceMappingURL=health.controller.d.ts.map

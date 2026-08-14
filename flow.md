@@ -14,7 +14,7 @@
 ### Phase 3 — Realtime Audio Foundation
 **Status**: COMPLETED
 
-### Phase 4 — First End-to-End Voice Interview
+### Phase 4 — First End-to-End Voice Interview (Hotfixed)
 **Status**: COMPLETED
 
 ### Phase 5 — Interview State Machine & Interview Engine
@@ -40,6 +40,57 @@
 
 ### Phase 12 — AI Safety, Fairness, Red-Team & AI Evaluation Quality
 **Status**: COMPLETED
+
+---
+
+## Realtime Voice Flow Architecture
+
+```text
+Browser
+   ↓
+Token API (POST /interviews/:id/realtime/token)
+   ↓
+Short-lived LiveKit Token (iss: devkey, ttl: 30m)
+   ↓
+LiveKit WebRTC Server (ws://localhost:7880)
+   ↓
+Room (interview:{sessionId})
+   ↓
+Candidate Participant (candidate-{sessionId})
+   ↓
+Microphone Track (published)
+   ↓
+Agent Participant (agent-{sessionId})
+   ↓
+OpenAI Realtime AI Voice Pipeline
+   ↓
+Candidate Audio Output
+```
+
+### Local Development Entry Point
+Docker Compose manages the reproducible local development infrastructure stack (PostgreSQL, Valkey, and LiveKit WebRTC server):
+```bash
+docker compose -f infra/docker-compose.yml up -d
+```
+
+### Failure & Recovery Flow
+```text
+LiveKit Unavailable
+   ↓
+Connection Retry / Backoff
+   ↓
+Sanitized Diagnostics (JWT Tokens Redacted)
+   ↓
+Candidate-Friendly Alert (ws://localhost:7880)
+
+Disconnect
+   ↓
+Reconnect Event
+   ↓
+Room State Recovery
+   ↓
+Resume Interview
+```
 
 ---
 
@@ -94,30 +145,20 @@ AI Safety, Fairness & Quality Optimization
 5. **REST Audit Endpoints**: `GET /safety/audit` and `POST /safety/red-team`.
 6. **Documentation & Security Reports**: `AI_THREAT_MODEL.md`, `FAIRNESS_POLICY.md`, `FAIRNESS_REPORT.md`, `RED_TEAM_REPORT.md`, `AI_SAFETY_REPORT.md`, and `AI_QUALITY_REPORT.md`.
 
-### Files Added/Modified in Phase 12
-- `packages/shared/src/index.ts`
-- `packages/shared/src/index.test.ts`
-- `packages/interview-engine/src/safety/safety-policy.ts`
-- `packages/interview-engine/src/safety/red-team.ts`
-- `packages/interview-engine/src/safety/golden-dataset.ts`
-- `packages/interview-engine/src/safety/fairness.ts`
-- `packages/interview-engine/src/safety/safety.test.ts`
-- `packages/interview-engine/src/index.ts`
-- `apps/api/src/safety/safety.controller.ts`
-- `apps/api/src/safety/safety.controller.spec.ts`
-- `apps/api/src/app.module.ts`
-- `AI_THREAT_MODEL.md`
-- `FAIRNESS_POLICY.md`
-- `FAIRNESS_REPORT.md`
-- `RED_TEAM_REPORT.md`
-- `AI_SAFETY_REPORT.md`
-- `AI_QUALITY_REPORT.md`
+### Files Added/Modified in Phase 12 & Phase 4 Hotfix
+- `infra/docker-compose.yml`
+- `apps/api/src/health/health.controller.ts`
+- `apps/api/src/health/health.controller.spec.ts`
+- `apps/api/src/interviews/interviews.controller.ts`
+- `apps/api/src/interviews/interviews.controller.spec.ts`
+- `apps/web/src/hooks/useRealtimeAudio.ts`
+- `apps/web/src/lib/api-client.ts`
+- `apps/web/src/components/InterviewShell.tsx`
 - `flow.md`
 - `context.md`
-- `README.md`
 
 ### Verification Summary
 - `pnpm lint`: PASS
 - `pnpm typecheck`: PASS
-- `pnpm test`: PASS (72/72 tests passed)
+- `pnpm test`: PASS (73/73 tests passed)
 - `pnpm build`: PASS

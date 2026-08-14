@@ -12,6 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.HealthController = void 0;
 const common_1 = require("@nestjs/common");
 const shared_1 = require("@ai-interviewer/shared");
+const config_1 = require("@ai-interviewer/config");
 let HealthController = class HealthController {
     constructor() {
         this.startTime = Date.now();
@@ -30,12 +31,13 @@ let HealthController = class HealthController {
             timestamp: new Date().toISOString(),
         };
     }
-    getReadiness() {
+    async getReadiness() {
         const uptimeSeconds = Math.floor((Date.now() - this.startTime) / 1000);
+        const livekitReachable = await this.checkLivekitReachable();
         const services = {
             database: true,
             redis: true,
-            livekit: Boolean(process.env.LIVEKIT_API_KEY),
+            livekit: livekitReachable,
         };
         const isAllOk = Object.values(services).every(Boolean);
         return {
@@ -51,6 +53,29 @@ let HealthController = class HealthController {
             timestamp: new Date().toISOString(),
         };
     }
+    async getRealtimeHealth() {
+        const env = (0, config_1.getValidatedEnv)();
+        const isReachable = await this.checkLivekitReachable();
+        return {
+            success: true,
+            data: {
+                status: isReachable ? 'LIVEKIT_REACHABLE' : 'LIVEKIT_UNAVAILABLE',
+                url: env.LIVEKIT_URL,
+            },
+            timestamp: new Date().toISOString(),
+        };
+    }
+    async checkLivekitReachable() {
+        try {
+            const env = (0, config_1.getValidatedEnv)();
+            const httpUrl = env.LIVEKIT_URL.replace('ws://', 'http://').replace('wss://', 'https://');
+            const res = await fetch(httpUrl, { method: 'GET' });
+            return res.status === 200 || res.status === 404;
+        }
+        catch {
+            return false;
+        }
+    }
 };
 exports.HealthController = HealthController;
 __decorate([
@@ -63,8 +88,14 @@ __decorate([
     (0, common_1.Get)('readiness'),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
-    __metadata("design:returntype", Object)
+    __metadata("design:returntype", Promise)
 ], HealthController.prototype, "getReadiness", null);
+__decorate([
+    (0, common_1.Get)('realtime'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], HealthController.prototype, "getRealtimeHealth", null);
 exports.HealthController = HealthController = __decorate([
     (0, common_1.Controller)('health')
 ], HealthController);

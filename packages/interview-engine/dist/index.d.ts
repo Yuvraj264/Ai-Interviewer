@@ -1,4 +1,4 @@
-import { EngineQuestion, InterviewType, InterviewConfig, InterviewEngineState, InterviewStage, AnswerAnalysis, QualityCategory, AdaptiveDecision, AdaptiveDecisionRecord, CandidateProfile, JobProfile, CandidateJobProfile, InterviewTarget, EvaluationDimension, TranscriptItem, InterviewEvaluation, HumanReviewOverride, HumanReview, InterviewSession, DashboardOverviewMetrics, AnalyticsData, RequirementCoverageStatus, SafetyViolationType, EvaluationEvidence, RedTeamTestResult, RedTeamAttackType } from '@ai-interviewer/shared';
+import { EngineQuestion, InterviewType, InterviewConfig, InterviewEngineState, InterviewStage, AnswerAnalysis, QualityCategory, AdaptiveDecision, AdaptiveDecisionRecord, CandidateProfile, JobProfile, CandidateJobProfile, InterviewTarget, EvaluationDimension, TranscriptItem, InterviewEvaluation, HumanReviewOverride, HumanReview, InterviewSession, DashboardOverviewMetrics, AnalyticsData, RequirementCoverageStatus, SafetyViolationType, EvaluationEvidence, RedTeamAttackType, RedTeamTestResult } from '@ai-interviewer/shared';
 
 interface InterviewerPromptContext {
     candidateName?: string;
@@ -238,13 +238,14 @@ declare class SafetyPolicyEngine {
 }
 
 interface RedTeamTestCase {
+    id: string;
     attackType: RedTeamAttackType;
     promptPayload: string;
+    expectedBehavior: string;
 }
 declare class RedTeamSuite {
     private policyEngine;
-    private static readonly ATTACK_TEST_CASES;
-    constructor();
+    static readonly ATTACK_TEST_CASES: RedTeamTestCase[];
     runRedTeamSuite(): RedTeamTestResult[];
 }
 
